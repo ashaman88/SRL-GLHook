@@ -1,0 +1,160 @@
+type
+  GLH_StringExtract = (GLH_Letters, GLH_Numbers, GLH_AlphaNumeric, GLH_Others);
+
+Function GLH_CharInRange(C: Char; RangeType: GLH_StringExtract): Boolean;
+Begin
+  Case RangeType Of
+    GLH_Numbers      : Result := ('0' <= C) And (C <= '9');
+    GLH_Letters      : Result := (('A' <= C) And (C <= 'Z')) Or (('a' <= C) And (C <= 'z'));
+    GLH_AlphaNumeric : Result := (('0' <= C) And (C <= '9')) Or ((('A' <= C) And (C <= 'Z')) Or (('a' <= C) And (C <= 'z')));
+    GLH_Others       : Result := Not ((('0' <= C) And (C <= '9')) Or ((('A' <= C) And (C <= 'Z')) Or (('a' <= C) And (C <= 'z'))));
+  End;
+End;
+
+Function GLH_ExtractFromString(Text: String; Extract: GLH_StringExtract): String;
+var
+  I: Integer;
+  Range: Set Of Char;
+Begin
+  Result := '';
+
+  For I := Length(Text) DownTo 1 Do
+    If GLH_CharInRange(Text[I], Extract) Then
+      Result := Text[I] + Result;
+End;
+
+Function GLH_GetUpTextEx(MinHSpacing, MinVSpacing: Integer): String;
+var
+  Texts: TStringArray;
+Begin
+  Texts := GLHook_FontsToText(GLHook_GetFontsByArea(IntToBox(GLC_UpTextX1, GLC_UpTextY1, GLC_UpTextX2, GLC_UpTextY2)), True, MinHSpacing, MinVSpacing);
+  If (Length(Texts) < 1) Then Exit;
+  Result := Texts[0];
+End;
+
+Function GLH_GetUpText: String;
+Begin
+  Result := GLH_GetUpTextEx(4, 10);
+End;
+
+Function GLH_IsUpTextEx(Text: String): Boolean;
+Begin
+  Text := Replace(Text, '?', '.');
+  Result := ExecRegExpr('.*' + Text + '.*', GLH_GetUpText);
+End;
+
+Function GLH_IsUpText(Text: String): Boolean;
+Begin
+  Result := (Pos(Text, GLH_GetUpText) > 0);
+End;
+
+Function GLH_IsUpTextMulti(Text: TStringArray): Boolean;
+var
+  I, H: Integer;
+  Uptext: String;
+Begin
+  Uptext := GLH_GetUpText;
+  H := High(Text);
+  For I := 0 To H Do
+    If (Pos(Text[I], UpText) > 0) Then
+    Begin
+      Result := True;
+      Exit;
+    End;
+End;
+
+Function GLH_GetLevelAtPos(X, Y: Integer): Integer;
+Begin
+  MMouse(X, Y, 0, 0);
+  Wait(RandomRange(80, 150));
+  Result := StrToIntDef(Between('l: ', ')', GLH_GetUpText), -1);
+End;
+
+Function GLH_GetChooseOptions(var MenuBounds: TBox): TTextInfoArray;
+var
+  TopCorner, LowCorner: TPanelArray;
+Begin
+  TopCorner := GLHook_GetItemsByMeanID(GLI_Texture_OptionMenuTopCorner, GLIM_Texture_OptionMenuTopCorner, 5);
+  LowCorner := GLHook_GetItemsByMeanID(GLI_Texture_OptionMenuLowCorner, GLIM_Texture_OptionMenuLowCorner, 5);
+
+  If ((Length(TopCorner) < 1) Or (Length(LowCorner) < 1)) Then Exit;
+
+  MenuBounds := IntToBox(TopCorner[0].SX[1], TopCorner[0].SY[1], LowCorner[1].SX[2], LowCorner[1].SY[2]);
+  Result := GLHook_FontsToTextEx(GLHook_GetFontsByArea(MenuBounds), True, 4, 7);
+End;
+
+Function GLH_ChooseOptionMultiEx(Texts: TStringArray; Action: Fnct_ActionOptions): Boolean;
+var
+  MP: TPoint;
+  Bounds: TBox;
+  MenuBounds: TBox;
+  I, II, H, L: Integer;
+  TextInfo: TTextInfoArray;
+  TopCorner, LowCorner: TPanelArray;
+Begin
+  Result := False;
+  TextInfo := GLH_GetChooseOptions;
+  If (Length(TextInfo) < 1) Then
+    Exit;
+
+  H := High(TextInfo);
+  L := High(Texts);
+
+  For I := 0 To L Do
+    For II := 0 To H Do
+      If (Pos(Texts[I], TextInfo[II].Text) > 0) Then
+      Begin
+        Result := True;
+        Bounds := TextInfo[II].Area;
+        GetMousePos(MP.X, MP.Y);
+
+        Case Action Of
+          ClickLeft:
+                       If PointInBox(MP, Bounds) Then
+                         ClickMouse2(True)
+                       Else
+                         MouseBoxEx(Bounds.X1, Bounds.Y1, Bounds.X2, Bounds.Y1, 5, MOUSE_LEFT);
+
+          Move:        If (Not PointInBox(MP, Bounds)) Then
+                         MouseBoxEx(Bounds.X1, Bounds.Y1, Bounds.X2, Bounds.Y1, 5, MOUSE_MOVE);
+
+          Nothing:      Begin End;
+
+          Else
+            Srl_Warn('GLH_ChooseOptionMultiEx', 'ClickRight Not A Valid Click For RS Menus!', Warn_AllVersions);
+        End;
+        Exit;
+      End;
+
+  If (Action <> Nothing) Then
+  Begin
+    I := Max(MenuBounds.X1 - 52, 0);
+    If (I = 0) Then
+      I := MenuBounds.X2 + 10;
+    MMouse(I, Max(MenuBounds.Y1 - 50, 0), 40, MenuBounds.Y2 - MenuBounds.Y1);
+    Wait(200 + Random(100));
+  End;
+End;
+
+Function GLH_ChooseOptionMulti(Options: TStringArray): Boolean;
+Begin
+  Result := GLH_ChooseOptionMultiEx(Options, 'All', ClickLeft);
+End;
+
+Function GLH_ChooseOptionEx(Option: String): Boolean;
+Begin
+  Result := GLH_ChooseOptionMultiEx([Option], ClickLeft);
+End;
+
+Function GLH_ChooseOption(Option: String): Boolean;
+Begin
+  Result := GLH_ChooseOptionMultiEx([Option], 'All', ClickLeft);
+End;
+
+Function GLH_OptionsExist(Options: TStringArray; MoveMouse: Boolean): Boolean;
+Begin
+  If MoveMouse Then
+    Result := GLH_ChooseOptionMultiEx(Options, 'All', Move)
+  Else
+    Result := GLH_ChooseOptionMultiEx(Options, 'All', Nothing);
+End;

@@ -1,0 +1,43 @@
+Function GLH_GetCompassAngle(Degrees: Boolean): Single;
+var
+  Deg, Rad: Single
+Begin
+  GLHCompassAngle(Deg, Rad);
+  If (Degrees)
+    Result := Deg;
+  Else
+    Result := Rad;
+End;
+
+Function GLH_FindFlag(var X, Y: Integer): Boolean;
+var
+  Items: TPanelArray;
+Begin
+  Items := GLHook_GetItemsByMeanID(GLI_MMSymbol_Flag, GLIM_MMSymbol_Flag, 10);
+  Result := (Length(Items) > 0);
+  If (Result) Then
+  Begin
+    X := Items[0].X;
+    Y := Items[0].Y;
+  End Else
+    Begin
+      X := -1;
+      Y := -1;
+    End;
+End;
+
+Function GLH_FlagPresent: Boolean;
+var
+  X, Y: Integer;
+Begin
+  Result := GLH_FindFlag(X, Y);
+End;
+
+Function GLH_FlagDistance: Integer;
+var
+  X, Y: Integer;
+Begin
+  Result := -1;
+  If GLH_FindFlag(X, Y) Then
+    Result := Distance(X, Y, MMCX, MMCY);
+End;

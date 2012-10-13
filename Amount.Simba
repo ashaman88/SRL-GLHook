@@ -1,0 +1,38 @@
+Function GLH_DepositScreen: Boolean; Forward;
+
+Function GLH_TradeScreen: Integer;
+Begin
+End;
+
+Function GLH_ShopScreen: Boolean;
+var
+  Fonts: TStringArray;
+Begin
+  Fonts := GLHook_FontsToText(GLHook_GetFontsByArea(IntToBox(66, 293, 157, 307)), False, 5, 0);
+  If (Length(Fonts) > 0) Then
+    Result := (Fonts[0] = 'Select an item');
+End;
+
+Function GLH_CheckArea(Area: String): Boolean;
+Begin
+  Case LowerCase(Area) Of
+    'inv', 'inventory': Begin
+                          Result := (GLH_BankScreen) or (GLH_ShopScreen) or (GLH_TradeScreen > 0);
+                          If (Not Result) Then Result := GLH_GameTab(Tab_Inv);
+                        End;
+
+    'shop':  Result := GLH_ShopScreen;
+
+    'bank':  Result := GLH_BankScreen;
+
+    'deposit box':  Result := GLH_DepositScreen;
+
+    'trade', 'your trade':  Result := (GLH_TradeScreen > 0);
+  Else
+    SRL_Warn('GLH_CheckArea', Area + ' is an invalid option.', Warn_AllVersions);
+  End;
+  If (Not Result) Then
+    WriteLn('PROBLEM: ' + area + ' interface not open');
+End;
+
+

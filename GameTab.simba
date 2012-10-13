@@ -1,0 +1,461 @@
+Function GLH_GetCurrentTab: Integer;
+Var
+  P: TPoint;
+  ItemArray: TPanelArray;
+Begin
+  Result := -1;
+  If (Not GLH_LoggedIn) Then
+    Exit;
+
+  ItemArray := GLHook_GetItemsByMeanID(GLI_GameTab_Selected, GLIM_GameTab_Selected, 5);
+  If (Length(ItemArray) < 1) Then Exit;
+
+  For Result := 0 To (Tab_LogOut - Tab_Combat) - 1 Do
+  Begin
+    P.X := 535 + Result mod 8 * 30;
+    P.Y := (169 + Result div 8 * 298) + 18;
+    If PointInBox(P, IntToBox(ItemArray[0].SX[0], ItemArray[0].SY[0], ItemArray[0].SX[2], ItemArray[0].SY[2])) Then
+      Break;
+  End;
+
+  Result := Result + Tab_Combat;
+  If GLH_BankScreen Then
+    Result := Tab_Inv;
+End;
+
+Function GLH_TabExists(Tab: Integer): Boolean;
+Var
+  LogOutScreen: TPanelArray;
+Begin
+  Result := False;
+  If (Not GLH_LoggedIn) Then
+    Exit;
+
+  If (Not InRange(Tab, Tab_Combat, Tab_LogOut)) Then
+  Begin
+    SRL_Warn('GLH_TabExists', 'Tab ' + toStr(Tab) + ' is not a valid tab number.', Warn_AllVersions);
+    Exit;
+  End;
+
+  If (Tab = TAB_INV) Then
+    If (GLH_BankScreen) Then
+    Begin
+      Result :=  True;
+      Exit;
+    End;
+
+  If (Tab = TAB_LOGOUT) Then
+  Begin
+    LogOutScreen := GLHook_GetItemsByID(171870);                 //Edit..
+    Result := (Length(LogOutScreen) > 0);
+  End;
+End;
+
+Function GLH_GameTab(Tab: Integer): Boolean;
+var
+  P: TPoint;
+  T, Tries: Integer;
+Begin
+  If (Not GLH_LoggedIn) Then Exit;
+
+  Result := False;
+  If (Not(InRange(Tab, Tab_Combat, Tab_LogOut))) Then
+  Begin
+    SRL_Warn('GLH_GameTab', 'Tab ' + IntToStr(Tab) + ' Is Not A Valid Tab Number.', Warn_AllVersions);
+    Exit;
+  End;
+
+  Result := (GetCurrentTab = Tab);
+  If (Result) Then Exit;
+
+  If (GLH_TabExists(Tab)) Then
+  Begin
+    P := Point((Tab - 21) mod 8 * 30 + RandomRange(527, 545), (Tab - 21) div 8 * 298 + RandomRange(177, 197));
+    If (Tab = Tab_LogOut) Then
+      P := Point(RandomRange(747, 760), RandomRange(3, 18));
+
+    Tries := 0;
+    While ((Tries < 3) And (Not Result)) Do
+    Begin
+      Mouse(P.X, P.Y, 0, 0, MOUSE_LEFT);
+      T := GetSystemTime;
+
+      While ((Not Result) And (GetSystemTime - T < 2000)) Do
+      begin
+        Result := (GetCurrentTab = Tab);
+        Wait(100 + Random(100));
+      end;
+
+      Inc(Tries);
+    End;
+
+    If (Result) Then
+      Wait(250 + Random(300));
+  End Else
+    SRL_Warn('GLH_GameTab', 'Tab ' + IntToStr(Tab) + ' Is Not A Valid Tab Number.', warn_Notice);
+End;
+
+Function GLH_GetCombatLevel: Integer;
+var
+  Text: TStringArray;
+Begin
+  Text := GLHook_FontsToText(GLHook_GetFontsByArea(IntToBox(685, 279, 731, 296)), False, 0, 1);
+  Result := StrToIntDef(ExtractFromStr(Text[0], NUMBERS), -1);
+End;
+
+Procedure GLH_Retaliate(TurnOn: Boolean);
+Var
+  X, Y: Integer;
+  Button, Activated: TPanelArray;
+Begin
+  Button := GLHook_GetItemsByID(GLI_AutoRetaliate);
+  Activated := GLHook_GetItemsByMeanID(GLI_AutoRetaliate, GLIM_AutoRetaliate_On, 5);
+
+  If (TurnOn xor (Length(Activated) > 0)) Then
+    MouseBox(Button[0].SX[0], Button[0].SY[0], Button[0].SX[2], Button[0].SY[2], MOUSE_LEFT);
+End;
+
+Function GLH_SkillToCoords(Skill: Integer): TPoint;
+var
+  SkillPT : TPoint;
+Begin
+  If (Not GLH_LoggedIn) Then Exit;
+
+  Case Skill Of
+    Skill_Attack        : SkillPT := Point(1,1);
+    Skill_Strength      : SkillPT := Point(1,2);
+    Skill_Defence       : SkillPT := Point(1,3);
+    Skill_Range         : SkillPT := Point(1,4);
+    Skill_Prayer        : SkillPT := Point(1,5);
+    Skill_Magic         : SkillPT := Point(1,6);
+    Skill_RuneCrafting  : SkillPT := Point(1,7);
+    Skill_Construction  : SkillPT := Point(1,8);
+    Skill_Dungeoneering : SkillPT := Point(1,9);
+    Skill_Hitpoints     : SkillPT := Point(2,1);
+    Skill_Agility       : SkillPT := Point(2,2);
+    Skill_Herblore      : SkillPT := Point(2,3);
+    Skill_Thieving      : SkillPT := Point(2,4);
+    Skill_Crafting      : SkillPT := Point(2,5);
+    Skill_Fletching     : SkillPT := Point(2,6);
+    Skill_Slayer        : SkillPT := Point(2,7);
+    Skill_Hunter        : SkillPT := Point(2,8);
+    Skill_Mining        : SkillPT := Point(3,1);
+    Skill_Smithing      : SkillPT := Point(3,2);
+    Skill_Fishing       : SkillPT := Point(3,3);
+    Skill_Cooking       : SkillPT := Point(3,4);
+    Skill_FireMaking    : SkillPT := Point(3,5);
+    Skill_WoodCutting   : SkillPT := Point(3,6);
+    Skill_Farming       : SkillPT := Point(3,7);
+    Skill_Summoning     : SkillPT := Point(3,8);
+  Else
+    Begin
+      Srl_Warn('GLH_SkillToCoords', 'Invalid Skill Number: ''' + IntToStr(Skill) + '''', Warn_AllVersions);
+      Exit;
+    End;
+  End;
+
+  Result := SkillCoords(SkillPT.Y, SkillPT.X);
+end;
+
+Function GLH_GetSkillInfo(Skill: Integer; Amount : Boolean): Integer;
+var
+  P: TPoint;
+  Text: TStringArray;
+Begin
+  Result := -1;
+  If (GLH_GameTab(Tab_Stats)) Then
+  Begin
+    P := GLH_SkillToCoords(Skill);
+    If (Not(Amount)) Then
+        P := Point(P.X + 15, P.Y + 12);
+
+    Text := GLHook_FontsToText(GLHook_GetFontsByArea(IntToBox(P.X - 2, P.Y - 2, P.X + 15, P.Y + 15)), True, 0, 5);
+    Result := StrToIntDef(ExtractFromStr(Text[0], NUMBERS), -1);
+  End;
+End;
+
+Function GLH_GetSkillLevel(Skill: Integer): Integer;
+Begin
+  Result := GLH_GetSkillInfo(Skill, False);
+Bnd;
+
+Function GLH_IsResting: Boolean;
+Begin
+  Result := (Length(GLHook_GetItemsByMeanID(GLI_MMPanel_Resting, GLIM_MMPanel_Resting, 5)) > 0);
+End;
+
+Function GLH_GetMMLevels(Which: GLE_MMLevel; var Colour: String): Integer;
+var
+  B: TBox;
+  I: Integer;
+  Fonts: TFontArray;
+  Texts: TStringArray;
+  Colours: TIntegerArray;
+  ColoursList: TStringArray;
+Begin
+  Result := -1;
+  Colour := '';
+
+  Case Which Of
+    GLE_MMLevel_Health:       B := IntToBox(719, 27, 745, 43);
+    GLE_MMLevel_Prayer:       B := IntToBox(735, 66, 762, 82);
+    GLE_MMLevel_RunEnergy:    B := IntToBox(735, 103, 762, 122);
+    GLE_MMLevel_Summoning:    B := IntToBox(719, 119, 745, 156);
+  End;
+
+  Colours := [65280, 65535, 2070783, 255];
+  ColoursList := ['Green', 'Yellow', 'Orange', 'Red'];
+
+  Fonts := GLHook_GetFontsByArea(B);
+  If (Length(Fonts) < 1) Then Exit;
+
+  For I := 0 To High(Colours) Do
+    If SimilarColors(Fonts[0].Colour, Colours[I], 5) Then
+      Colour := ColoursList[I];
+
+  Texts := GLHook_FontsToText(Fonts, True, 0, 5);
+  Result := StrToIntDef(ExtractFromStr(Texts[0], NUMBERS), -1);
+End;
+
+Function GLH_HPPercent: Integer;
+var
+  ColourString: string;
+Begin
+  If (Players[CurrentPlayer].Level[SKILL_HITPOINTS] < 1) Then
+    Players[CurrentPlayer].Level[SKILL_HITPOINTS] := Max(1, GLH_GetSkillInfo(SKILL_HITPOINTS, False));
+
+  if (Players[CurrentPlayer].Level[SKILL_HITPOINTS] > 1) then
+    Result := Round(GLH_GetMMLevels(SKILL_HITPOINTS, ColorString) * 10 / Players[CurrentPlayer].Level[SKILL_HITPOINTS])
+  else
+    Result := -1;
+End;
+
+Function GLH_EquipmentCoords(EquipmentSlot: GLE_Equipment): TPoint;
+Begin
+  Case EquipmentSlot Of
+    GLE_Euipment_Aura     Result := Point();
+    GLE_Equipment_Head    Result := Point(640, 225);
+    GLE_Equipment_Cloak   Result := Point(600, 266);
+    GLE_Equipment_Neck    Result := Point(640, 266);
+    GLE_Equipment_Quiver  Result := Point(684, 266);
+    GLE_Equipment_RHand   Result := Point(588, 304);
+    GLE_Equipment_Torso   Result := Point(644, 304);
+    GLE_Equipment_LHand   Result := Point(700, 304);
+    GLE_Equipment_Legs    Result := Point(642, 343);
+    GLE_Equipment_Gloves  Result := Point(588, 384);
+    GLE_Equipment_Boots   Result := Point(643, 384);
+    GLE_Equipment_Ring    Result := Point(700, 384);
+  Else
+    Begin
+      Result := Point(-1,-1);
+	    Srl_Warn('GLH_EquipmentCoords','Invalid EquipSlot(' + IntToStr(EquipmentSlot) + ') Passed', Warn_AllVersions);
+    End;
+  End;
+End;
+
+Function GLH_GetEquippedItemBounds(Which: GLE_Equipment): TBox;
+var
+  P: TPoint;
+Begin
+  If (Not InRange(Which, GLE_Equipment_Aura, GLE_Equipment_Ring)) Then
+  Begin
+    Result := IntToBox(-1, -1, -1, -1);
+	  Srl_Warn('GLH_GetEquipedItemBounds', 'Invalid EquipSlot(' + IntToStr(EquipmentSlot) + ') Passed', Warn_AllVersions);
+    Exit;
+  End;
+
+  P := GLH_EquipmentCoords(Which);
+  Result := IntToBox(P.X - 11, P.Y - 11, P.X + 11, P.Y + 11);
+End;
+
+Function GLH_ItemEquipped(Which: GLE_Equipment): Boolean;
+Begin
+  Result := False;
+
+  If (Not InRange(Which, GLE_Equipment_Aura, GLE_Equipment_Ring)) Then
+  Begin
+	  Srl_Warn('GLH_ItemEquipped', 'Invalid EquipSlot(' + IntToStr(EquipmentSlot) + ') Passed', Warn_AllVersions);
+    Exit;
+  End;
+
+  Case Which Of
+    GLE_Euipment_Aura     Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Aura, GLIM_Equipment_Aura, 5)) < 1);
+    GLE_Equipment_Head    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Head, GLIM_Equipment_Head, 5)) < 1);
+    GLE_Equipment_Cloak   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Cloak, GLIM_Equipment_Cloak, 5)) < 1);
+    GLE_Equipment_Neck    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Neck, GLIM_Equipment_Neck, 5)) < 1);
+    GLE_Equipment_Quiver  Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Quiver, GLIM_Equipment_Quiver, 5)) < 1);
+    GLE_Equipment_RHand   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_RHand, GLIM_Equipment_RHand, 5)) < 1);
+    GLE_Equipment_Torso   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Torso, GLIM_Equipment_Torso, 5)) < 1);
+    GLE_Equipment_LHand   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_LHand, GLIM_Equipment_LHand, 5)) < 1);
+    GLE_Equipment_Legs    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Legs, GLIM_Equipment_Legs, 5)) < 1);
+    GLE_Equipment_Gloves  Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Gloves, GLIM_Equipment_Gloves, 5)) < 1);
+    GLE_Equipment_Boots   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Boots, GLIM_Equipment_Boots, 5)) < 1);
+    GLE_Equipment_Ring    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Ring, GLIM_Equipment_Ring, 5)) < 1);
+  End;
+End;
+
+Procedure GLH_TakeOff(Which: GLE_Equipment);
+var
+  P: TPoint;
+Begin
+  P := GLH_EquipmentCoords(Which);
+  If GLH_ItemEquipped(Which) Then
+  Begin
+    Mouse(P.X, P.Y, 5, 5, MOUSE_LEFT);
+    Wait(200 + Random(350));
+  End;
+End;
+
+Procedure GLH_TakeOffAllExcept(Exceptions: GLE_Equipment_Array);
+var
+  I: GLE_Equipment;
+Begin
+  For I := GLE_Equipment_Aura To GLE_Equipment_Ring Do
+    If (Not InArray(Exceptions, I)) Then
+      GLH_TakeOff(I);
+End;
+
+Procedure GLH_TakeOffAllItems;
+Begin
+  GLH_TakeOffAllExcept([]);
+End;
+
+Function GLH_CountEquippedItems: Integer;
+var
+  I: Integer;
+Begin
+  Result := Ord(GLH_GameTab(Tab_Equip)) - 2;
+  If (Result = -1) Then Exit;
+
+  For I := GLE_Equipment_Aura to GLE_Equipment_Ring Do
+    If GLH_ItemEquipped(I) Then
+      Inc(Result);
+End;
+
+Function GLH_CurrentWorld: Integer;
+Var
+  Text: TStringArray;
+Begin
+  Result := -1;
+  If (GLH_GetCurrentTab <> Tab_Friends) Then
+  Begin
+    GLH_GameTab(Tab_Friends);
+    Wait(250 + Random(500));
+  End;
+
+  Text := GLHook_FontsToText(GLHook_GetFontsByArea(IntToBox(601, 223, 703, 238)), True, 0, 5);
+  Result := StrToIntDef(ExtractFromStr(Text[0], NUMBERS), -1);
+End;
+
+Function GLH_SetRun(Run: Boolean): Boolean;
+var
+  RunIcon: TPanelArray;
+Begin
+  RunIcon := GLHook_GetItemsByMeanID(GLI_MMPanel_RunEnergy, GLIM_MMPanel_RunOn, 5);
+  If ((Length(RunIcon) > 0) Xor Run) Then
+  Begin
+    Mouse(RunIcon[0].X, RunIcon[0].Y, 10, 10, MOUSE_LEFT);
+    Result := True;
+  End;
+End;
+
+Function GLH_RestAt(Min: Integer): Boolean;
+var
+  T: Integer;
+  Level: Integer;
+  Colour: String;
+Begin
+  T := GetSystemTime + 5000;
+  Repeat
+    Level := GLH_GetMMLevels(GLE_MMLevel, Colour);
+    Result := (Level >= Min);
+    If (Result) Then
+    Begin
+      GLH_SetRun(True);
+      Exit;
+    End;
+    If (Level > 0) Then
+      Exit;
+  Until(T > GetSystemTime);
+End;
+
+Function GLH_SetRest: Boolean;
+var
+  RunIcon: TPanelArray;
+Begin
+  Result := False;
+  If (Not GLH_IsResting) Then
+  Begin
+    RunIcon := GLHook_GetItemsByID(GLI_MMPanel_RunEnergy);
+    Mouse(RunIcon[0].X, RunIcon[0].Y, 10, 10, MOUSE_RIGHT);
+    If GLH_WaitOption('Rest', 300) Then
+      Result := WaitFunc(@GLH_IsResting, 100, 5000);
+  End;
+End;
+
+Function GLH_RestUntil(Energy: Integer): Boolean;
+var
+  Colour: String;
+Begin
+  Result := (GLH_GetMMLevels(GLE_MMLevel_RunEnergy, Colour) >= Energy);
+  If (Result) Then Exit;
+  GLH_SetRest;
+  While (GLH_GetMMLevels(GLE_MMLevel_RunEnergy, Colour) < Energy) Do
+  Begin
+    Result := GLH_IsResting;
+    If (Not Result) Then Exit;
+    If SRL_HasProc(srl_AntiBan) Then
+      SRL_Procs[srl_AntiBan]();
+    Wait(100 + Random(50));
+  End;
+End;
+
+Function GLH_RestUntilHP(HPPercentage: Integer): Boolean;
+begin
+  Result := (GLH_HPPercent >= HPPercentage);
+  If (Result) Then Exit;
+  SetRest;
+  While (GLH_HPPercent < HPPercentage) Do
+  Begin
+    Result := GLH_IsResting;
+    If (Not Result) Then Exit;
+    If SRL_HasProc(srl_AntiBan) Then
+      SRL_Procs[srl_AntiBan]();
+    Wait(100 + Random(50));
+  End;
+End;
+
+Function GLH_GetLobbyTab: Integer;
+var
+  LobbyTabs: TPanelArray;
+Begin
+  LobbyTabs := GLHook_GetItemsByID(GLI_LobbyTab);
+  For Result := 1 to 6 Do
+    If (LobbyTabs[Result - 1].MeanID = GLIM_LobbyTab_Active) then
+      Exit;
+  Result := -1;
+End;
+
+Function GLH_LobbyTab(Tab: Integer): Boolean;
+var
+  TabPanel: TPanelArray;
+  TabArray: TIntegerArray;
+Begin
+  Result := False;
+  If (Not InRange(Tab, L_PlayerInfo, L_Options)) Then
+  Begin
+    Srl_Warn('GLH_LobbyTab', 'Tab ' + IntToStr(Tab) + ' Is Not Valid.', Warn_AllVersions);
+    Exit;
+  End;
+
+  Result := GLH_GetLobbyTab = Tab;
+  If Result Then Exit;
+
+  TabArray := [GLIM_Lobby_WorldList, GLIM_Lobby_PlayerInfo, GLIM_Lobby_FriendsList, GLIM_Lobby_FriendChat, GLIM_Lobby_ClanChat, GLIM_Lobby_Options];
+  TabPanel := GLHook_GetItemsByMeanID(GLI_LobbyTab_Icon, TabArray[Tab - 1], 5);
+  If (Length(TabPanel) > 0) Then
+  Begin
+    Mouse(TabPanel[0].X, TabPanel[0].Y, 10, 6, MOUSE_LEFT);
+    Result := True;
+  End;
+End;
