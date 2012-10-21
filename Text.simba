@@ -93,7 +93,7 @@ var
   TopCorner, LowCorner: TPanelArray;
 Begin
   Result := False;
-  TextInfo := GLH_GetChooseOptions;
+  TextInfo := GLH_GetChooseOptions(MenuBounds);
   If (Length(TextInfo) < 1) Then
     Exit;
 
@@ -138,7 +138,7 @@ End;
 
 Function GLH_ChooseOptionMulti(Options: TStringArray): Boolean;
 Begin
-  Result := GLH_ChooseOptionMultiEx(Options, 'All', ClickLeft);
+  Result := GLH_ChooseOptionMultiEx(Options, ClickLeft);
 End;
 
 Function GLH_ChooseOptionEx(Option: String): Boolean;
@@ -148,13 +148,13 @@ End;
 
 Function GLH_ChooseOption(Option: String): Boolean;
 Begin
-  Result := GLH_ChooseOptionMultiEx([Option], 'All', ClickLeft);
+  Result := GLH_ChooseOptionMultiEx([Option], ClickLeft);
 End;
 
 Function GLH_OptionsExist(Options: TStringArray; MoveMouse: Boolean): Boolean;
 Begin
   If MoveMouse Then
-    Result := GLH_ChooseOptionMultiEx(Options, 'All', Move)
+    Result := GLH_ChooseOptionMultiEx(Options, Move)
   Else
-    Result := GLH_ChooseOptionMultiEx(Options, 'All', Nothing);
+    Result := GLH_ChooseOptionMultiEx(Options, Nothing);
 End;

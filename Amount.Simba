@@ -1,3 +1,4 @@
+Function GLH_BankScreen: Boolean; Forward;
 Function GLH_DepositScreen: Boolean; Forward;
 
 Function GLH_TradeScreen: Integer;

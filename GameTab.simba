@@ -13,7 +13,7 @@ Begin
   For Result := 0 To (Tab_LogOut - Tab_Combat) - 1 Do
   Begin
     P.X := 535 + Result mod 8 * 30;
-    P.Y := (169 + Result div 8 * 298) + 18;
+    P.Y := (169 + Result div 8 * 298) + 68;
     If PointInBox(P, IntToBox(ItemArray[0].SX[0], ItemArray[0].SY[0], ItemArray[0].SX[2], ItemArray[0].SY[2])) Then
       Break;
   End;
@@ -25,6 +25,8 @@ End;
 
 Function GLH_TabExists(Tab: Integer): Boolean;
 Var
+  P: TPoint;
+  Icons: TPanelArray;
   LogOutScreen: TPanelArray;
 Begin
   Result := False;
@@ -46,9 +48,15 @@ Begin
 
   If (Tab = TAB_LOGOUT) Then
   Begin
-    LogOutScreen := GLHook_GetItemsByID(171870);                 //Edit..
+    LogOutScreen := GLHook_GetItemsByID(GLI_GameTab_ExitTo_Btn);
     Result := (Length(LogOutScreen) > 0);
   End;
+
+  Tab := Tab - Tab_Combat;
+  P.X := 535 + Tab mod 8 * 30;
+  P.Y := (169 + Tab div 8 * 298) + 68;
+  Icons:= GLHook_GetItemsByArea(IntToBox(P.X - 7, P.Y - 10, P.X + 10, P.Y + 7));
+  Result := (Length(Icons) >= 2);
 End;
 
 Function GLH_GameTab(Tab: Integer): Boolean;
@@ -65,12 +73,12 @@ Begin
     Exit;
   End;
 
-  Result := (GetCurrentTab = Tab);
+  Result := (GLH_GetCurrentTab = Tab);
   If (Result) Then Exit;
 
   If (GLH_TabExists(Tab)) Then
   Begin
-    P := Point((Tab - 21) mod 8 * 30 + RandomRange(527, 545), (Tab - 21) div 8 * 298 + RandomRange(177, 197));
+    P := Point((Tab - Tab_Combat) mod 8 * 30 + RandomRange(527, 545), (Tab - Tab_Combat) div 8 * 298 + RandomRange(177, 197) + 18);
     If (Tab = Tab_LogOut) Then
       P := Point(RandomRange(747, 760), RandomRange(3, 18));
 
@@ -82,7 +90,7 @@ Begin
 
       While ((Not Result) And (GetSystemTime - T < 2000)) Do
       begin
-        Result := (GetCurrentTab = Tab);
+        Result := (GLH_GetCurrentTab = Tab);
         Wait(100 + Random(100));
       end;
 
@@ -170,6 +178,11 @@ Begin
         P := Point(P.X + 15, P.Y + 12);
 
     Text := GLHook_FontsToText(GLHook_GetFontsByArea(IntToBox(P.X - 2, P.Y - 2, P.X + 15, P.Y + 15)), True, 0, 5);
+    If (Length(Text) < 1) Then
+    Begin
+      Result := -1;
+      Exit;
+    End;
     Result := StrToIntDef(ExtractFromStr(Text[0], NUMBERS), -1);
   End;
 End;
@@ -177,7 +190,7 @@ End;
 Function GLH_GetSkillLevel(Skill: Integer): Integer;
 Begin
   Result := GLH_GetSkillInfo(Skill, False);
-Bnd;
+End;
 
 Function GLH_IsResting: Boolean;
 Begin
@@ -225,7 +238,7 @@ Begin
     Players[CurrentPlayer].Level[SKILL_HITPOINTS] := Max(1, GLH_GetSkillInfo(SKILL_HITPOINTS, False));
 
   if (Players[CurrentPlayer].Level[SKILL_HITPOINTS] > 1) then
-    Result := Round(GLH_GetMMLevels(SKILL_HITPOINTS, ColorString) * 10 / Players[CurrentPlayer].Level[SKILL_HITPOINTS])
+    Result := Round(GLH_GetMMLevels(SKILL_HITPOINTS, ColourString) * 10 / Players[CurrentPlayer].Level[SKILL_HITPOINTS])
   else
     Result := -1;
 End;
@@ -233,22 +246,22 @@ End;
 Function GLH_EquipmentCoords(EquipmentSlot: GLE_Equipment): TPoint;
 Begin
   Case EquipmentSlot Of
-    GLE_Euipment_Aura     Result := Point();
-    GLE_Equipment_Head    Result := Point(640, 225);
-    GLE_Equipment_Cloak   Result := Point(600, 266);
-    GLE_Equipment_Neck    Result := Point(640, 266);
-    GLE_Equipment_Quiver  Result := Point(684, 266);
-    GLE_Equipment_RHand   Result := Point(588, 304);
-    GLE_Equipment_Torso   Result := Point(644, 304);
-    GLE_Equipment_LHand   Result := Point(700, 304);
-    GLE_Equipment_Legs    Result := Point(642, 343);
-    GLE_Equipment_Gloves  Result := Point(588, 384);
-    GLE_Equipment_Boots   Result := Point(643, 384);
-    GLE_Equipment_Ring    Result := Point(700, 384);
+    GLE_Equipment_Aura:    Result := Point(0, 0);          //Edit.
+    GLE_Equipment_Head:    Result := Point(640, 225);
+    GLE_Equipment_Cloak:   Result := Point(600, 266);
+    GLE_Equipment_Neck:    Result := Point(640, 266);
+    GLE_Equipment_Quiver:  Result := Point(684, 266);
+    GLE_Equipment_RHand:   Result := Point(588, 304);
+    GLE_Equipment_Torso:   Result := Point(644, 304);
+    GLE_Equipment_LHand:   Result := Point(700, 304);
+    GLE_Equipment_Legs:    Result := Point(642, 343);
+    GLE_Equipment_Gloves:  Result := Point(588, 384);
+    GLE_Equipment_Boots:   Result := Point(643, 384);
+    GLE_Equipment_Ring:    Result := Point(700, 384);
   Else
     Begin
       Result := Point(-1,-1);
-	    Srl_Warn('GLH_EquipmentCoords','Invalid EquipSlot(' + IntToStr(EquipmentSlot) + ') Passed', Warn_AllVersions);
+	    Srl_Warn('GLH_EquipmentCoords','Invalid EquipSlot(' + ToStr(EquipmentSlot) + ') Passed', Warn_AllVersions);
     End;
   End;
 End;
@@ -257,10 +270,10 @@ Function GLH_GetEquippedItemBounds(Which: GLE_Equipment): TBox;
 var
   P: TPoint;
 Begin
-  If (Not InRange(Which, GLE_Equipment_Aura, GLE_Equipment_Ring)) Then
+  If (Not InRange(Ord(Which), Ord(GLE_Equipment_Aura), Ord(GLE_Equipment_Ring))) Then
   Begin
     Result := IntToBox(-1, -1, -1, -1);
-	  Srl_Warn('GLH_GetEquipedItemBounds', 'Invalid EquipSlot(' + IntToStr(EquipmentSlot) + ') Passed', Warn_AllVersions);
+	  Srl_Warn('GLH_GetEquipedItemBounds', 'Invalid EquipSlot(' + ToStr(Which) + ') Passed', Warn_AllVersions);
     Exit;
   End;
 
@@ -272,25 +285,25 @@ Function GLH_ItemEquipped(Which: GLE_Equipment): Boolean;
 Begin
   Result := False;
 
-  If (Not InRange(Which, GLE_Equipment_Aura, GLE_Equipment_Ring)) Then
+  If (Not InRange(Ord(Which), Ord(GLE_Equipment_Aura), Ord(GLE_Equipment_Ring))) Then
   Begin
-	  Srl_Warn('GLH_ItemEquipped', 'Invalid EquipSlot(' + IntToStr(EquipmentSlot) + ') Passed', Warn_AllVersions);
+	  Srl_Warn('GLH_ItemEquipped', 'Invalid EquipSlot(' + ToStr(Which) + ') Passed', Warn_AllVersions);
     Exit;
   End;
 
   Case Which Of
-    GLE_Euipment_Aura     Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Aura, GLIM_Equipment_Aura, 5)) < 1);
-    GLE_Equipment_Head    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Head, GLIM_Equipment_Head, 5)) < 1);
-    GLE_Equipment_Cloak   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Cloak, GLIM_Equipment_Cloak, 5)) < 1);
-    GLE_Equipment_Neck    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Neck, GLIM_Equipment_Neck, 5)) < 1);
-    GLE_Equipment_Quiver  Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Quiver, GLIM_Equipment_Quiver, 5)) < 1);
-    GLE_Equipment_RHand   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_RHand, GLIM_Equipment_RHand, 5)) < 1);
-    GLE_Equipment_Torso   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Torso, GLIM_Equipment_Torso, 5)) < 1);
-    GLE_Equipment_LHand   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_LHand, GLIM_Equipment_LHand, 5)) < 1);
-    GLE_Equipment_Legs    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Legs, GLIM_Equipment_Legs, 5)) < 1);
-    GLE_Equipment_Gloves  Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Gloves, GLIM_Equipment_Gloves, 5)) < 1);
-    GLE_Equipment_Boots   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Boots, GLIM_Equipment_Boots, 5)) < 1);
-    GLE_Equipment_Ring    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Ring, GLIM_Equipment_Ring, 5)) < 1);
+    GLE_Equipment_Aura:    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Aura, GLIM_Equipment_Aura, 5)) < 1);
+    GLE_Equipment_Head:    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Head, GLIM_Equipment_Head, 5)) < 1);
+    GLE_Equipment_Cloak:   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Cloak, GLIM_Equipment_Cloak, 5)) < 1);
+    GLE_Equipment_Neck:    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Neck, GLIM_Equipment_Neck, 5)) < 1);
+    GLE_Equipment_Quiver:  Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Quiver, GLIM_Equipment_Quiver, 5)) < 1);
+    GLE_Equipment_RHand:   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_RHand, GLIM_Equipment_RHand, 5)) < 1);
+    GLE_Equipment_Torso:   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Torso, GLIM_Equipment_Torso, 5)) < 1);
+    GLE_Equipment_LHand:   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_LHand, GLIM_Equipment_LHand, 5)) < 1);
+    GLE_Equipment_Legs:    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Legs, GLIM_Equipment_Legs, 5)) < 1);
+    GLE_Equipment_Gloves:  Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Gloves, GLIM_Equipment_Gloves, 5)) < 1);
+    GLE_Equipment_Boots:   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Boots, GLIM_Equipment_Boots, 5)) < 1);
+    GLE_Equipment_Ring:    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Ring, GLIM_Equipment_Ring, 5)) < 1);
   End;
 End;
 
@@ -322,7 +335,7 @@ End;
 
 Function GLH_CountEquippedItems: Integer;
 var
-  I: Integer;
+  I: GLE_Equipment;
 Begin
   Result := Ord(GLH_GameTab(Tab_Equip)) - 2;
   If (Result = -1) Then Exit;
@@ -367,7 +380,7 @@ var
 Begin
   T := GetSystemTime + 5000;
   Repeat
-    Level := GLH_GetMMLevels(GLE_MMLevel, Colour);
+    Level := GLH_GetMMLevels(GLE_MMLevel_RunEnergy, Colour);
     Result := (Level >= Min);
     If (Result) Then
     Begin

@@ -1,0 +1,760 @@
+{*
+  This File May NOT be Copied, Modified OR Translated for any purposes other than updating the SRL-GLHook Library.
+
+  By: Brandon-T.
+*}
+
+{$IFDEF GLHook}
+  {$loadlib GLHook}
+{$ENDIF}
+
+type pByte = ^Byte;
+type pInt  = ^Integer;
+type pBool = ^Boolean;
+type pFloat = ^Single;
+
+type TModel = record
+  ID: Cardinal;
+  SX, SY: Integer;
+  Stride: Cardinal;
+  TriangleCount: Integer;
+end;
+
+type TPanelItem = record
+  X, Y: Integer;
+  BaseID: Integer;
+  MeanID: Integer;
+  TextureID: Integer;
+  SX, SY: Array [0..3] Of Integer;
+end;
+
+type TTextInfo = record
+  Area: TBox;
+  Text: String;
+  Colour: Integer;
+end;
+
+type TTextColour = Record
+  Text: String;
+  Areas: Array Of TBox;
+  Colours: Array Of Integer;
+End;
+
+type TFontInfo = record
+  ID: Cardinal;
+  R, G, B, A: Byte;
+  Colour: Integer;
+  X, Y: Single;
+  Symbol: Char;
+  Shadow: Boolean;
+  Translate: Array [0..2] Of Single;
+  VX, VY, TX, TY: Array [0..3] Of Integer;
+end;
+
+type PModel = ^TModel;
+type PPanelItem  = ^TPanelItem;
+type PFontInfo = ^TFontInfo;
+
+type TModelArray = array of TModel;
+type TPanelArray = array of TPanelItem;
+type TFontArray = array of TFontInfo;
+type TTextInfoArray = Array Of TTextInfo;
+type TTextColourArray = Array Of TTextColour;
+type T2DTextInfoArray = Array Of TTextInfoArray;
+
+Function GLHook_GetAllItems: TPanelArray;
+var
+  Ptr: Pointer;
+  Size, I: Integer;
+  PanelPtr: PPanelItem;
+begin
+  Ptr := GLHGetPanelItems(Size);
+  SetLength(Result, Size);
+  For I := 0 To Size - 1 Do
+  begin
+    PanelPtr := Ptr;
+    Result[I] := PanelPtr^;
+    Ptr := Ptr + sizeof(TPanelItem);
+  end;
+end;
+
+Function GLHook_GetItemsByID(ID: Integer): TPanelArray;
+var
+  Ptr: Pointer;
+  Size, I: Integer;
+  PanelPtr: PPanelItem;
+begin
+  Ptr := GLHGetItemsByID(ID, Size);
+  SetLength(Result, Size);
+  For I := 0 To Size - 1 Do
+  begin
+    PanelPtr := Ptr;
+    Result[I] := PanelPtr^;
+    Ptr := Ptr + sizeof(TPanelItem);
+  end;
+end;
+
+Function GLHook_GetItemsByArea(Area: TBox): TPanelArray;
+var
+  Ptr: Pointer;
+  Size, I: Integer;
+  PanelPtr: PPanelItem;
+begin
+  Ptr := GLHGetItemsByArea(Area.X1, Area.Y1, Area.X2, Area.Y2, Size);
+  SetLength(Result, Size);
+  For I := 0 To Size - 1 Do
+  begin
+    PanelPtr := Ptr;
+    Result[I] := PanelPtr^;
+    Ptr := Ptr + sizeof(TPanelItem);
+  end;
+end;
+
+Function GLHook_GetItemsByMeanID(BaseID, MeanID, Tolerance: Integer): TPanelArray;
+var
+  I, L: Integer;
+  ListOfItems: TPanelArray;
+begin
+  ListOfItems := GLHook_GetItemsByID(BaseID);
+  L := High(ListOfItems);
+
+  For I := 0 To L Do
+    If SimilarColors(ListOfItems[I].MeanID, MeanID, Tolerance) Then
+    begin
+      SetLength(Result, Length(Result) + 1);
+      Result[Length(Result) - 1] := ListOfItems[I];
+    end;
+end;
+
+Function GLHook_GetAllModels: TModelArray;
+var
+  Ptr: Pointer;
+  Size, I: Integer;
+  ModelPtr: PModel;
+begin
+  Ptr := GLHGetModels(Size);
+  SetLength(Result, Size);
+  For I := 0 To Size - 1 Do
+  begin
+    ModelPtr := Ptr;
+    Result[I] := ModelPtr^;
+    Ptr := Ptr + sizeof(TModel);
+  end;
+end;
+
+Function GLHook_GetModelsByID(ID: Cardinal): TModelArray;
+var
+  Ptr: Pointer;
+  Size, I: Integer;
+  ModelPtr: PModel;
+begin
+  Ptr := GLHGetModelsByID(ID, Size);
+  SetLength(Result, Size);
+  For I := 0 To Size - 1 Do
+  begin
+    ModelPtr := Ptr;
+    Result[I] := ModelPtr^;
+    Ptr := Ptr + sizeof(TModel);
+  end;
+end;
+
+Function GLHook_GetModelsByTriangleCount(Count: Cardinal): TModelArray;
+var
+  Ptr: Pointer;
+  Size, I: Integer;
+  ModelPtr: PModel;
+begin
+  Ptr := GLHGetModelsByTCount(Count, Size);
+  SetLength(Result, Size);
+  For I := 0 To Size - 1 Do
+  begin
+    ModelPtr := Ptr;
+    Result[I] := ModelPtr^;
+    Ptr := Ptr + sizeof(TModel);
+  end;
+end;
+
+Function GLHook_GetModelsByArea(Area: TBox): TModelArray;
+var
+  Ptr: Pointer;
+  Size, I: Integer;
+  ModelPtr: PModel;
+begin
+  Ptr := GLHGetModelsByArea(Area.X1, Area.Y1, Area.X2, Area.Y2, Size);
+  SetLength(Result, Size);
+  For I := 0 To Size - 1 Do
+  begin
+    ModelPtr := Ptr;
+    Result[I] := ModelPtr^;
+    Ptr := Ptr + sizeof(TModel);
+  end;
+end;
+
+Function GLHook_GetAllFonts: TFontArray;
+var
+  Ptr: Pointer;
+  Size, I: Integer;
+begin
+  Ptr := GLHGetFonts(Size);
+  SetLength(Result, Size);
+  For I := 0 To Size - 1 Do
+  begin
+    Result[I].ID := pInt(Ptr)^;
+    Ptr := Ptr + sizeof(Integer);
+
+    Result[I].R := pByte(Ptr)^;
+    Result[I].G := pByte(Ptr + sizeof(Byte))^;
+    Result[I].B := pByte(Ptr + (2 * sizeof(Byte)))^;
+    Result[I].A := pByte(Ptr + (3 * sizeof(Byte)))^;
+    Ptr := Ptr + (sizeof(Byte) * 4);
+
+    Result[I].Colour := RGBToColor(Result[I].R, Result[I].G, Result[I].B);
+
+    Result[I].X := pFloat(Ptr)^;
+    Result[I].Y := pFloat(Ptr + sizeof(Single))^;
+    Ptr := Ptr + (sizeof(Single) * 2);
+
+    Result[I].Symbol := pChar(Ptr)^;
+    Result[I].Shadow := pBool(Ptr + sizeof(Boolean))^;
+    Ptr := Ptr + (sizeof(Char) + sizeof(Boolean)) + 2;   //Padded by 2.
+
+    Result[I].Translate[0] := pFloat(Ptr)^;
+    Result[I].Translate[1] := pFloat(Ptr + sizeof(Single))^;
+    Result[I].Translate[2] := pFloat(Ptr + (2 * sizeof(Single)))^;
+    Ptr := Ptr + (sizeof(Single) * 3);
+
+    Result[I].VX[0] := pInt(Ptr)^;
+    Result[I].VX[1] := pInt(Ptr + sizeof(Integer))^;
+    Result[I].VX[2] := pInt(Ptr + (2 * sizeof(Integer)))^;
+    Result[I].VX[3] := pInt(Ptr + (3 * sizeof(Integer)))^;
+    Ptr := Ptr + (sizeof(Integer) * 4);
+
+    Result[I].VY[0] := pInt(Ptr)^;
+    Result[I].VY[1] := pInt(Ptr + sizeof(Integer))^;
+    Result[I].VY[2] := pInt(Ptr + (2 * sizeof(Integer)))^;
+    Result[I].VY[3] := pInt(Ptr + (3 * sizeof(Integer)))^;
+    Ptr := Ptr + (sizeof(Integer) * 4);
+
+    Result[I].TX[0] := pInt(Ptr)^;
+    Result[I].TX[1] := pInt(Ptr + sizeof(Integer))^;
+    Result[I].TX[2] := pInt(Ptr + (2 * sizeof(Integer)))^;
+    Result[I].TX[3] := pInt(Ptr + (3 * sizeof(Integer)))^;
+    Ptr := Ptr + (sizeof(Integer) * 4);
+
+    Result[I].TY[0] := pInt(Ptr)^;
+    Result[I].TY[1] := pInt(Ptr + sizeof(Integer))^;
+    Result[I].TY[2] := pInt(Ptr + (2 * sizeof(Integer)))^;
+    Result[I].TY[3] := pInt(Ptr + (3 * sizeof(Integer)))^;
+    Ptr := Ptr + (sizeof(Integer) * 4);
+  end;
+end;
+
+Function GLHook_GetFontsByArea(Area: TBox): TFontArray;
+var
+  Ptr: Pointer;
+  Size, I: Integer;
+begin
+  Ptr := GLHGetFontsArea(Area.X1, Area.Y1, Area.X2, Area.Y2, Size);
+  SetLength(Result, Size);
+  For I := 0 To Size - 1 Do
+  begin
+    Result[I].ID := pInt(Ptr)^;
+    Ptr := Ptr + sizeof(Integer);
+
+    Result[I].R := pByte(Ptr)^;
+    Result[I].G := pByte(Ptr + sizeof(Byte))^;
+    Result[I].B := pByte(Ptr + (2 * sizeof(Byte)))^;
+    Result[I].A := pByte(Ptr + (3 * sizeof(Byte)))^;
+    Ptr := Ptr + (sizeof(Byte) * 4);
+
+    Result[I].Colour := RGBToColor(Result[I].R, Result[I].G, Result[I].B);
+
+    Result[I].X := pFloat(Ptr)^;
+    Result[I].Y := pFloat(Ptr + sizeof(Single))^;
+    Ptr := Ptr + (sizeof(Single) * 2);
+
+    Result[I].Symbol := pChar(Ptr)^;
+    Result[I].Shadow := pBool(Ptr + sizeof(Boolean))^;
+    Ptr := Ptr + (sizeof(Char) + sizeof(Boolean)) + 2;  //Padded by 2.
+
+    Result[I].Translate[0] := pFloat(Ptr)^;
+    Result[I].Translate[1] := pFloat(Ptr + sizeof(Single))^;
+    Result[I].Translate[2] := pFloat(Ptr + (2 * sizeof(Single)))^;
+    Ptr := Ptr + (sizeof(Single) * 3);
+
+    Result[I].VX[0] := pInt(Ptr)^;
+    Result[I].VX[1] := pInt(Ptr + sizeof(Integer))^;
+    Result[I].VX[2] := pInt(Ptr + (2 * sizeof(Integer)))^;
+    Result[I].VX[3] := pInt(Ptr + (3 * sizeof(Integer)))^;
+    Ptr := Ptr + (sizeof(Integer) * 4);
+
+    Result[I].VY[0] := pInt(Ptr)^;
+    Result[I].VY[1] := pInt(Ptr + sizeof(Integer))^;
+    Result[I].VY[2] := pInt(Ptr + (2 * sizeof(Integer)))^;
+    Result[I].VY[3] := pInt(Ptr + (3 * sizeof(Integer)))^;
+    Ptr := Ptr + (sizeof(Integer) * 4);
+
+    Result[I].TX[0] := pInt(Ptr)^;
+    Result[I].TX[1] := pInt(Ptr + sizeof(Integer))^;
+    Result[I].TX[2] := pInt(Ptr + (2 * sizeof(Integer)))^;
+    Result[I].TX[3] := pInt(Ptr + (3 * sizeof(Integer)))^;
+    Ptr := Ptr + (sizeof(Integer) * 4);
+
+    Result[I].TY[0] := pInt(Ptr)^;
+    Result[I].TY[1] := pInt(Ptr + sizeof(Integer))^;
+    Result[I].TY[2] := pInt(Ptr + (2 * sizeof(Integer)))^;
+    Result[I].TY[3] := pInt(Ptr + (3 * sizeof(Integer)))^;
+    Ptr := Ptr + (sizeof(Integer) * 4);
+  end;
+end;
+
+Function GLH_iAbs(I: Integer): Integer;
+Begin
+  Result := I;
+  If (Result < 0) Then
+    Result := Result * -1;
+End;
+
+Function GLHook_FontsToText1D(var FontArray: TFontArray; Shadow, RecordColours: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): TTextColourArray; Overload;
+var
+  I, J, K, L, N: Integer;
+  IX, IY: Integer;
+  X, Y: Integer;
+  X2, Y2: Integer;
+  Text: String;
+  Store: Boolean;
+  SameLine, NewLine: Boolean;
+Begin
+  L := High(FontArray);
+  If (L < 1) Then
+    Exit;
+
+  Store := True;
+
+  If (Shadow) Then
+  Begin
+    K := 0;
+    I := 1;
+    J := 2;
+  End Else
+    Begin
+      K := 0;
+      I := 0;
+      J := 1;
+    End;
+
+  SetLength(Result, 1);
+
+  For I To L Do
+  Begin
+    X := Round(FontArray[I].X + FontArray[I].VX[2]);
+    Y := Round(FontArray[I].Y);
+
+    If ((L > 1) And (J < L)) Then
+    Begin
+      X2 := Round(FontArray[I + J].X);
+      Y2 := Round(FontArray[I + J].Y);
+    End Else
+      Begin
+        X2 := Round(FontArray[I].X);
+        Y2 := Round(FontArray[I].Y);
+      End;
+
+    Text := Text + FontArray[I].Symbol;
+    If (X2 - X) >= MinHSpacing Then
+      Text := Text + ' ';
+
+    If Store Then
+    Begin
+      IX := Round(FontArray[I].X);
+      IY := Y - FontArray[I].VY[2];
+      Store := False;
+    End;
+
+    NewLine := ((GLH_iAbs(Y2 - Y)) >= MinVSpacing);
+    If (RecordColours And (FontArray[I].Colour <> FontArray[I + J].Colour) And (Not NewLine)) Then
+    Begin
+      SetLength(Result[N].Areas, Length(Result[N].Areas) + 1);
+      SetLength(Result[N].Colours, Length(Result[N].Colours) + 1);
+      Result[N].Text := Text;
+      Result[N].Areas[K].X1 := IX;
+      Result[N].Areas[K].Y1 := IY;
+      Result[N].Areas[K].X2 := X;
+      Result[N].Areas[K].Y2 := Y;
+      Result[N].Colours[K] := FontArray[I].Colour;
+      Inc(K);
+      SameLine := True;
+    End;
+
+    If (NewLine) Then
+    Begin
+      SetLength(Result[N].Areas, Length(Result[N].Areas) + 1);
+      SetLength(Result[N].Colours, Length(Result[N].Colours) + 1);
+      If (Not SameLine) Then K := 0;
+
+      Result[N].Text := Text;
+      Result[N].Areas[K].X1 := Round(FontArray[I].X);
+      Result[N].Areas[K].Y1 := Y - FontArray[I].VY[2];
+      Result[N].Areas[K].X2 := X;
+      Result[N].Areas[K].Y2 := Y;
+      Result[N].Colours[K] := FontArray[I].Colour;
+      SetLength(Result, Length(Result) + 1);
+
+      Text := '';
+      K := 0; Inc(N);
+      Store := True;
+      SameLine := False;
+    End;
+
+    If Shadow Then Inc(I);
+  End;
+End;
+
+Function GLHook_FontsToText2D(var FontArray: TFontArray; Shadow, RecordColours: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): T2DTextInfoArray; Overload;
+var
+  I, J, K, L, N: Integer;
+  IX, IY: Integer;
+  X, Y: Integer;
+  X2, Y2: Integer;
+  Text: String;
+  Store: Boolean;
+  TextInfo: TTextInfoArray;
+  SameLine, NewLine: Boolean;
+Begin
+  L := High(FontArray);
+  If (L < 1) Then
+    Exit;
+
+  Store := True;
+
+  If (Shadow) Then
+  Begin
+    K := 0;
+    I := 1;
+    J := 2;
+  End Else
+    Begin
+      K := 0;
+      I := 0;
+      J := 1;
+    End;
+
+  For I To L Do
+  Begin
+    X := Round(FontArray[I].X + FontArray[I].VX[2]);
+    Y := Round(FontArray[I].Y);
+
+    If ((L > 1) And (J < L)) Then
+    Begin
+      X2 := Round(FontArray[I + J].X);
+      Y2 := Round(FontArray[I + J].Y);
+    End Else
+      Begin
+        X2 := Round(FontArray[I].X);
+        Y2 := Round(FontArray[I].Y);
+      End;
+
+    Text := Text + FontArray[I].Symbol;
+    If (X2 - X) >= MinHSpacing Then
+      Text := Text + ' ';
+
+    If Store Then
+    Begin
+      IX := Round(FontArray[I].X);
+      IY := Y - FontArray[I].VY[2];
+      Store := False;
+    End;
+
+    NewLine := ((GLH_iAbs(Y2 - Y)) >= MinVSpacing);
+    If (RecordColours And (FontArray[I].Colour <> FontArray[I + J].Colour) And (Not NewLine)) Then   //If Different Colours On Line..
+    Begin                                                                                            //Append The Current Text To The Array..
+      SetLength(TextInfo, Length(TextInfo) + 1);
+      TextInfo[K].Text := Text;
+      TextInfo[K].Area.X1 := IX;
+      TextInfo[K].Area.Y1 := IY;
+      TextInfo[K].Area.X2 := X;
+      TextInfo[K].Area.Y2 := Y;
+      TextInfo[K].Colour := FontArray[I].Colour;
+      Inc(K);
+      Text := '';                          //Clear Everything && Start Grabbing The Next Set of Text With A Different Colour.
+      SameLine := True;
+    End;
+
+    If (NewLine) Then                     //If There's a New-Line, Append To The Current Text, Push It To The Result, Reset Everything.
+    Begin
+      SetLength(TextInfo, Length(TextInfo) + 1);
+      If (Not SameLine) Then K := 0;
+
+      TextInfo[K].Text := Text;
+      TextInfo[K].Area.X1 := Round(FontArray[I].X);
+      TextInfo[K].Area.Y1 := Y - FontArray[I].VY[2];
+      TextInfo[K].Area.X2 := X;
+      TextInfo[K].Area.Y2 := Y;
+      TextInfo[K].Colour := FontArray[I].Colour;
+
+      SetLength(Result, Length(Result) + 1);
+      Result[N] := TextInfo;                   //Each Array Is One Line Of Text With A List Of All Colours.
+
+      Text := '';
+      K := 0; Inc(N);
+      Store := True;
+      SameLine := False;
+      SetLength(TextInfo, 0);
+    End;
+
+    If Shadow Then Inc(I);
+  End;
+End;
+
+Function GLHook_FontsToTextEx(var FontArray: TFontArray; Shadow: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): TTextInfoArray;
+var
+  I, J, K, L: Integer;
+  IX, IY: Integer;
+  X, Y: Integer;
+  X2, Y2: Integer;
+  Text: String;
+  Store: Boolean;
+Begin
+  L := High(FontArray);
+  If (L < 1) Then
+    Exit;
+
+  Store := True;
+
+  If (Shadow) Then
+  Begin
+    K := 0;
+    I := 1;             //Actual Font's Index.. 0 = Font's Shadow Index.
+    J := 2;             //Stride To The Next Font.
+  End Else
+    Begin
+      K := 0;
+      I := 0;
+      J := 1;
+    End;
+
+  For I To L Do
+  Begin
+    X := Round(FontArray[I].X + FontArray[I].VX[2]);    //Font Position + Width.
+    Y := Round(FontArray[I].Y);                         //Bottom of the Font.
+
+    If ((L > 1) And (J < L)) Then
+    Begin
+      X2 := Round(FontArray[I + J].X);                    //The Next Character's X.
+      Y2 := Round(FontArray[I + J].Y);                    //The Next Character's. Y.
+    End Else
+      Begin
+        X2 := Round(FontArray[I].X);
+        Y2 := Round(FontArray[I].Y);
+      End;
+
+    Text := Text + FontArray[I].Symbol;
+    If (X2 - X) >= MinHSpacing Then
+      Text := Text + ' ';
+
+    If Store Then
+    Begin
+      IX := Round(FontArray[I].X);
+      IY := Y - FontArray[I].VY[2];
+      Store := False;
+    End;
+
+    If (GLH_iAbs(Y2 - Y)) >= MinVSpacing Then
+    Begin
+      SetLength(Result, Length(Result) + 1);
+      Result[K].Text := Text;
+      Result[K].Area.X1 := IX;
+      Result[K].Area.Y1 := IY;
+      Result[K].Area.X2 := X;
+      Result[K].Area.Y2 := Y;
+      Result[K].Colour := FontArray[I].Colour;
+      Inc(K);
+      Text := '';
+      Store := True;
+    End;
+
+    If Shadow Then Inc(I);
+  End;
+End;
+
+Function GLHook_FontsToTextEx(var FontArray: TFontArray; Shadow, RecordColours: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): TTextInfoArray; Overload;
+var
+  I, J, K, L: Integer;
+  IX, IY: Integer;
+  X, Y: Integer;
+  X2, Y2: Integer;
+  Text: String;
+  Store: Boolean;
+  OldColour: Integer;
+  ColourChanged: Boolean;
+Begin
+  L := High(FontArray);
+  If (L < 1) Then
+    Exit;
+
+  Store := True;
+
+  If (Shadow) Then
+  Begin
+    K := 0;
+    I := 1;
+    J := 2;
+  End Else
+    Begin
+      K := 0;
+      I := 0;
+      J := 1;
+    End;
+
+  For I To L Do
+  Begin
+    X := Round(FontArray[I].X + FontArray[I].VX[2]);
+    Y := Round(FontArray[I].Y);
+
+    If ((L > 1) And (J < L)) Then
+    Begin
+      X2 := Round(FontArray[I + J].X);
+      Y2 := Round(FontArray[I + J].Y);
+    End Else
+      Begin
+        X2 := Round(FontArray[I].X);
+        Y2 := Round(FontArray[I].Y);
+      End;
+
+    Text := Text + FontArray[I].Symbol;
+    If (X2 - X) >= MinHSpacing Then
+      Text := Text + ' ';
+
+    If Store Then
+    Begin
+      OldColour := FontArray[I].Colour;
+      IX := Round(FontArray[I].X);
+      IY := Y - FontArray[I].VY[2];
+      Store := False;
+    End;
+
+    If (RecordColours And (FontArray[I + J].Colour <> OldColour)) Then ColourChanged := True;
+
+    If (((GLH_iAbs(Y2 - Y)) >= MinVSpacing) Or ColourChanged) Then
+    Begin
+      SetLength(Result, Length(Result) + 1);
+      Result[K].Text := Text;
+      Result[K].Area.X1 := IX;
+      Result[K].Area.Y1 := IY;
+      Result[K].Area.X2 := X;
+      Result[K].Area.Y2 := Y;
+      Result[K].Colour := FontArray[I].Colour;
+      Inc(K);
+      Text := '';
+      Store := True;
+      ColourChanged := False;
+    End;
+
+    If Shadow Then Inc(I);
+  End;
+End;
+
+Function GLHook_FontsToText(var FontArray: TFontArray; Shadow: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): TStringArray;
+var
+  I, J, L: Integer;
+  X, Y: Integer;
+  X2, Y2: Integer;
+  Text: String;
+Begin
+  L := High(FontArray);
+  If (L < 1) Then
+    Exit;
+
+  SetLength(Result, 1);
+
+  If (Shadow) Then
+  Begin
+    I := 1;
+    J := 2;
+  End Else
+    Begin
+      I := 0;
+      J := 1;
+    End;
+
+  For I To L Do
+  Begin
+    X := Round(FontArray[I].X + FontArray[I].VX[2]);
+    Y := Round(FontArray[I].Y);
+
+    If ((L > 1) And (J < L)) Then
+    Begin
+      X2 := Round(FontArray[I + J].X);
+      Y2 := Round(FontArray[I + J].Y);
+    End Else
+      Begin
+        X2 := Round(FontArray[I].X);
+        Y2 := Round(FontArray[I].Y);
+      End;
+
+    Text := Text + FontArray[I].Symbol;
+    If (X2 - X) >= MinHSpacing Then
+      Text := Text + ' ';
+
+    If (GLH_iAbs(Y2 - Y)) >= MinVSpacing Then
+      Text := Text + '\n\r';
+
+    If Shadow Then I := I + 1;
+  End;
+
+  ExplodeWrap('\n\r', Text, Result);
+  For I := 0 To High(Result) Do
+    Result[I] := Trim(Result[I]);
+End;
+
+Function PosStrArr(ToFind: String; SearchArray: TStringArray; Var Where: Integer): Boolean;
+var
+  I, H: Integer;
+Begin
+  H := High(SearchArray);
+  For I := 0 To H Do
+    If (Pos(LowerCase(ToFind), LowerCase(SearchArray[I])) > 0) Then
+    Begin
+      Where := I;
+      Result := True;
+      Break;
+    End;
+End;
+
+Function GLHook_CountTextInArea(Area: TBox; Text: String; Shadow: Boolean; MinHSpacing, MinVSpacing: Integer): Integer;
+Var
+  I, J: Integer;
+  AreaFonts: TStringArray;
+Begin
+  AreaFonts := GLHook_FontsToText(GLHook_GetFontsByArea(Area), Shadow, MinHSpacing, MinVSpacing);
+  For I := 0 To High(AreaFonts) Do
+    For J := 0 To Length(AreaFonts[I]) Do
+      If (LowerCase(AreaFonts[I][J]) = LowerCase(Text)) Then
+        Inc(Result);
+End;
+
+Function GLHook_FindTextAreaEx(Area: TBox; Text: TStringArray; Shadow: Boolean; MinHSpacing, MinVSpacing: Integer): Boolean;
+var
+  I, J: Integer;
+  AreaFonts: TStringArray;
+Begin
+  AreaFonts := GLHook_FontsToText(GLHook_GetFontsByArea(Area), Shadow, MinHSpacing, MinVSpacing);
+  For I := 0 To High(Text) Do
+    If {InStrArrEx(Text[I], AreaFonts, J) or }PosStrArr(Text[I], AreaFonts, J) Then
+    Begin
+      Result := True;
+      Break;
+    End;
+End;
+
+Function GLHook_FindTextArea(Area: TBox; Text: String; Shadow: Boolean; MinVSpacing: Integer): Boolean;
+var
+  I: Integer;
+Begin
+  For I := 0 To 11 Do
+    If GLHook_FindTextAreaEx(Area, [Text], Shadow, I, MinVSpacing) Then
+    Begin
+      Result := True;
+      Break;
+    End;
+End;

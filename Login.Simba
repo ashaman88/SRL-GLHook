@@ -1,4 +1,7 @@
-{$I GLHook/GLHook.Simba}
+Function GLH_LoggedIn: Boolean;
+Begin
+  Result := (Length(GLHook_GetItemsByMeanID(GLI_ReportPlayer_Button, GLIM_ReportPlayer_Button, 5)) > 0);
+End;
 
 Function GLH_LobbyScreen: Boolean;
 Begin
@@ -12,7 +15,7 @@ Begin
   Result := (GLH_LoggedIn) Or (GLH_LobbyScreen);
 
   If (Not Result) Then
-    Result := (Length(GLHook_GetItemsByID(GLI_RSLogoID)) > 0)
+    Result := (Length(GLHook_GetItemsByID(GLI_RSLogoID)) > 0);
 
   GLHGetViewPort(Area.X1, Area.Y1, Area.X2, Area.Y2);
   If ((Area.X2 - Area.X1 > GLC_FixedWidth) or (Area.Y2 - Area.Y1 > GLC_FixedHeight)) Then
@@ -27,9 +30,9 @@ Function GLH_ValidEmail: Boolean;
 var
   SkipButton: TPanelArray;
 Begin
-  While (Length(GLHook_GetItemByID(GLI_ValidEmailBox)) > 0) Do
+  While (Length(GLHook_GetItemsByID(GLI_ValidEmailBox)) > 0) Do
   Begin
-    SkipButton := GLHook_GetItemByID(GLI_ValidEmailExit);
+    SkipButton := GLHook_GetItemsByID(GLI_ValidEmailExit);
     If (Length(SkipButton) > 0) Then
       MouseBox(SkipButton[0].SX[0], SkipButton[0].SY[0], SkipButton[0].SX[2], SkipButton[0].SY[2], MOUSE_LEFT);
     WaitFunc(@GLH_RSReady, 75, 3000);
@@ -38,39 +41,7 @@ Begin
 End;
 
 Function GLH_ExitToLobby: Boolean;
-var
-  Count: Integer;
-  LobbyButton: TPanelArray;
 Begin
-  Result := GLH_LobbyScreen;
-  If Result Then Exit;
-
-  If (SRL_Procs[srl_OnExitToLobby] <> nil) Then
-    SRL_Procs[srl_OnExitToLobby]();
-
-  If (Not GLH_GameTab(TAB_LOGOUT)) Then Exit;
-  Wait(200 + Random(100));
-
-  While (GLH_LoggedIn and (Count < 10)) Do
-  Begin
-    Inc(Count);
-    LobbyButton := GLHook_GetItemsByID(171870);                      //EDIT..
-    If (Length(LobbyButton) > 1) Then
-      If (GLHook_GetTextArea(LobbyButton[0].SX[0], LobbyButton[0].SY[0], LobbyButton[0].SX[2], LobbyButton[0].SY[2]) = 'Lobby') Then
-      Begin
-        MouseBox(LobbyButton[0].SX[0], LobbyButton[0].SY[0], LobbyButton[0].SX[2], LobbyButton[0].SY[2], MOUSE_LEFT);
-        For I := 0 To 10 Do
-        Begin
-          Wait(1000);
-          If (Not GLH_LobbyScreen) Then
-            If GLH_ValidEmail Then
-            Begin
-              Result := True;
-              Exit;
-            End;
-        End;
-      End;
-  End;
 End;
 
 Function GLH_LeaveLobby: Boolean;
@@ -90,112 +61,9 @@ Begin
 End;
 
 Function GLH_LogOut: Boolean;
-var
-  Count: Integer;
-  LogInButton: TPanelArray;
 Begin
-  GLH_ExitedSquealOfFortune := False;
-  Result := Not GLH_LoggedIn;
-  If Result Then Exit;
-
-  If (SRL_Procs[srl_OnLogOut] <> nil) Then
-    SRL_Procs[srl_OnLogOut]();
-
-  If (Not GLH_GameTab(TAB_LOGOUT)) Then
-  Begin
-    GLH_CloseWindow;
-    If (Not GLH_GameTab(TAB_LOGOUT)) Then
-      Exit;
-  End;
-
-  While (GLH_LoggedIn and (Count < 10)) Do
-  Begin
-    Inc(Count);
-    LogInButton := GLHook_GetItemsByID(171870);                 //EDIT..
-    If (Length(LogInButton) > 1) Then
-      If (GLHook_GetTextArea(LogInButton[1].SX[0], LogInButton[1].SY[0], LogInButton[1].SX[2], LogInButton[1].SY[2]) = 'Login') Then
-      Begin
-        MouseBox(LogInButton[1].SX[0], LogInButton[1].SY[0], LogInButton[1].SX[2], LogInButton[1].SY[2], MOUSE_LEFT);
-        For I := 0 To 10 Do
-        Begin
-          Wait(1000);
-          If (Not GLH_LoggedIn) Then
-          Begin
-            Result := True;
-            Exit;
-          End;
-        End;
-      End;
 End;
 
 Function GLH_LoginToLobby: Boolean;
-var
-  InfoBox: TPanelArray;
-  InfoLocation: TBox;
 Begin
-  ActivateClient;
-  Wait(100);
-  TypeByte(VK_ESCAPE);
-  Wait(500);
-
-  Result := ((GLH_LobbyScreen) Or (GLH_LoggedIn));
-  If Result Then Exit;
-
-  If (Not (Players[CurrentPlayer].Active)) Then
-  Begin
-    WriteLn('Player is not Active...');
-    If (AllPlayersInActive) Then
-    Begin
-      WriteLn('All players not active!');
-      Exit;
-    End;
-    NextPlayer(False);
-    Exit;
-  End;
-
-  T := GetSystemTime;
-  Repeat
-    If GLH_RSReady Then
-      Break;
-    If ((GetSystemTime - T) > 180000) Then
-    Begin
-      WriteLn('It has been 3 minutes and Runescape is not yet ready... Terminating.');
-      TerminateScript;
-    End;
-    Wait(RandomRange(1000, 2000));
-  Until (False);
-  WriteLn('Welcome to Runescape.');
-
-  Members := Players[CurrentPlayer].Member;
-  If (Length(Players[CurrentPlayer].WorldInfo) > 0) Then
-    Members := Players[CurrentPlayer].WorldInfo[0];
-
-  ProcStart:
-  If (GLH_LoggedIn) Then Exit;
-  For W := 0 To 1 Do
-  Begin
-    InfoBox := GLHook_GetItemsByID(61200);
-    If (W = 0) Then
-      InfoLocation := IntToBox(InfoBox[0].SX[0], InfoBox[0].SY[0], InfoBox[1].SX[2], InfoBox[1].SY[2])
-    Else
-      InfoLocation := IntToBox(InfoBox[2].SX[0], InfoBox[2].SY[0], InfoBox[3].SX[2], InfoBox[3].SY[2]);
-
-    T := (GetSystemTime + (60000 * 2));
-    If GLH_FindTextArea(InfoLocation) Then
-    Begin
-      Mouse(InfoBox.X2 - 2, InfoBox.Y2 - 5, 5, 5, MOUSE_LEFT);
-      Repeat
-        TypeByte(VK_BACK);
-      Until(Not GLH_FindTextArea(InfoLocation));
-    End;
-
-    Wait(100 + Random(200));
-    If W = 0 Then
-    Begin
-      WriteLn(Capitalize(Players[CurrentPlayer].Name));
-      TypeSend(Players[CurrentPlayer].Name);
-    End Else
-      TypeSend(Players[CurrentPlayer].Pass);
-    Wait(100 + Random(50));
-  End;
 End;

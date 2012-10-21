@@ -3,8 +3,8 @@ var
   Deg, Rad: Single
 Begin
   GLHCompassAngle(Deg, Rad);
-  If (Degrees)
-    Result := Deg;
+  If (Degrees) Then
+    Result := Deg
   Else
     Result := Rad;
 End;

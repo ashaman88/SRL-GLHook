@@ -13,12 +13,16 @@ const
 //Known Enumerations.
 
 type
+  GLE_ChatState = (GLE_ChatState_All, GLE_ChatState_On, GLE_ChatState_Off, GLE_ChatState_Hide,
+                   GLE_ChatState_Friends, GLE_ChatState_Filter, GLE_ChatState_XP, GLE_ChatState_None);
+
   GLE_MMLevel = (GLE_MMLevel_Health, GLE_MMLevel_Prayer, GLE_MMLevel_RunEnergy, GLE_MMLevel_Summoning);
 
   GLE_Equipment = (GLE_Equipment_Aura, GLE_Equipment_Head, GLE_Equipment_Cloak, GLE_Equipment_Neck, GLE_Equipment_Quiver,
                    GLE_Equipment_RHand, GLE_Equipment_Torso, GLE_Equipment_LHand, GLE_Equipment_Legs,
                    GLE_Equipment_Gloves, GLE_Equipment_Boots, GLE_Equipment_Ring);
 
+  GLE_ChatState_Array = Array Of GLE_ChatState;
   GLE_Equipment_Array = Array Of GLE_Equipment;
 
 
@@ -71,7 +75,8 @@ const
   GLI_Squeal_ExitButton             = 11270;
   GLIM_Squeal_ExitButton            = 2362638;
 
-  GLI_GameChat_Options              = 139230;
+  GLI_GameChat_Active               = 139230;
+  GLI_GameChat_InActive             = 138975;
   GLIM_GameChat_Selected            = 5457460;
   GLIM_GameChat_Normal              = 3683116;
 
@@ -84,6 +89,8 @@ const
   GLIM_BasicExit_MedButton          = 4143405;
   GLIM_Scroll_SmBasicArrow          = 3880491;
 
+  GLI_GameTab_ExitTo_Btn            = 171870;
+  GLI_GameTab_Background            = 191250;
   GLI_GameTab_Selected              = 48705;
   GLI_GameTab_Combat                = 31110;
   GLI_GameTab_Notice                = 49470;
@@ -102,6 +109,8 @@ const
   GLI_GameTab_Notes                 = 27540;
   GLI_GameTab_LogOut                = 46665;
   GLI_GameTab_LogOut_Btn            = 201960;
+  GLIM_GameTab_ExitTo_Btn           = 6493974;
+  GLIM_GameTab_Background           = 6707270;
   GLIM_GameTab_Selected             = 2629392;
   GLIM_GameTab_Combat               = 4534812;
   GLIM_GameTab_Notice               = 7300172;
@@ -331,14 +340,16 @@ const
 
 //Object IDs:
 
-  GLM_Obj_BankBooth                 = 4216896244;
+  GLM_Obj_EdgevilleBankBooth        = 1644377173;
+  GLM_Obj_VarrockWestBankBooth      = 4216896244;
   GLM_Obj_Door                      = 3072665158;
   GLM_Obj_VBank_UpStairCase         = 1053311928;
   GLM_Obj_VBank_DownStairCase       = 2290863208;
   GLM_Obj_Anvil                     = 1628035397;
   GLM_Obj_LogFire                   = 2057907316;
 
-  GLMT_Obj_BankBooth                = 150;
+  GLMT_Obj_EdgevilleBankBooth       = 410;
+  GLMT_Obj_VarrockWestBankBooth     = 150;
   GLMT_Obj_Door                     = 290;
   GLMT_Obj_VBankUpStairCase         = 610;
   GLMT_Obj_VBankDownStairCase       = 388;

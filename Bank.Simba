@@ -1,10 +1,11 @@
 Function GLH_BankScreen: Boolean;
 Begin
-  Result := GLHook_FindTextAreaEx(IntToBox(195, 76, 324, 96), ['Bank', 'Bank of Runescape'], False, 5, 0);
+  Result := GLHook_FindTextAreaEx(IntToBox(195, 76, 324, 96), ['Bank', 'Bank of Runescape'], True, 5, 10);
 End;
 
 Function GLH_DepositScreen: Boolean;
 Begin
+  Result := GLHook_FindTextAreaEx(IntToBox(144, 83, 396, 101), ['Deposit', 'Box'], True, 4, 10);
 End;
 
 Function GLH_PinScreen: Boolean;
@@ -92,7 +93,7 @@ Begin
     If (Tries > 2) Then
     Begin
       SRL_Warn('GLH_InPin', '''' + Pin + ''' is not the correct Pin', Warn_AllVersions);
-      ClosePinScreen;
+      GLH_ClosePinScreen;
       Exit;
     End;
   End;
@@ -137,10 +138,10 @@ Begin
   Result := False;
   If GLH_BankScreen Then
   Begin
-    ItemArray := GLHook_GetItemsByMeanID(99450);            //Edit..
+    ItemArray := GLHook_GetItemsByMeanID(GLI_Interface_MedButton, GLIM_BasicExit_MedButton, 5);
     Timer := GetTimeRunning + 8000;
     Repeat
-      Mouse(ItemArray[0].X, ItemArray[0].Y, 10, 12, MOUSE_LEFT);
+      Mouse(ItemArray[0].X, ItemArray[0].Y, 5, 5, MOUSE_LEFT);
       For I := 0 To 30 Do
       Begin
         If (Not GLH_BankScreen) Then
