@@ -350,7 +350,7 @@ Begin
     X := Round(FontArray[I].X + FontArray[I].VX[2]);
     Y := Round(FontArray[I].Y);
 
-    If ((L > 1) And (J < L)) Then
+    If ((L > 1) And (I <= L)) Then
     Begin
       X2 := Round(FontArray[I + J].X);
       Y2 := Round(FontArray[I + J].Y);
@@ -444,7 +444,7 @@ Begin
     X := Round(FontArray[I].X + FontArray[I].VX[2]);
     Y := Round(FontArray[I].Y);
 
-    If ((L > 1) And (J < L)) Then
+    If ((L > 1) And (I <= L)) Then
     Begin
       X2 := Round(FontArray[I + J].X);
       Y2 := Round(FontArray[I + J].Y);
@@ -538,7 +538,7 @@ Begin
     X := Round(FontArray[I].X + FontArray[I].VX[2]);    //Font Position + Width.
     Y := Round(FontArray[I].Y);                         //Bottom of the Font.
 
-    If ((L > 1) And (J < L)) Then
+    If ((L > 1) And (I <= L)) Then
     Begin
       X2 := Round(FontArray[I + J].X);                    //The Next Character's X.
       Y2 := Round(FontArray[I + J].Y);                    //The Next Character's. Y.
@@ -611,7 +611,7 @@ Begin
     X := Round(FontArray[I].X + FontArray[I].VX[2]);
     Y := Round(FontArray[I].Y);
 
-    If ((L > 1) And (J < L)) Then
+    If ((L > 1) And (I <= L)) Then
     Begin
       X2 := Round(FontArray[I + J].X);
       Y2 := Round(FontArray[I + J].Y);
@@ -682,7 +682,7 @@ Begin
     X := Round(FontArray[I].X + FontArray[I].VX[2]);
     Y := Round(FontArray[I].Y);
 
-    If ((L > 1) And (J < L)) Then
+    If ((L > 1) And ((I + J) < L)) Then
     Begin
       X2 := Round(FontArray[I + J].X);
       Y2 := Round(FontArray[I + J].Y);
@@ -696,7 +696,7 @@ Begin
     If (X2 - X) >= MinHSpacing Then
       Text := Text + ' ';
 
-    If (GLH_iAbs(Y2 - Y)) >= MinVSpacing Then
+    If (GLH_iAbs(Y2 - Y) >= MinVSpacing) Then
       Text := Text + '\n\r';
 
     If Shadow Then I := I + 1;

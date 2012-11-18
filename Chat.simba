@@ -31,8 +31,10 @@ Begin
   If (Chats[1].Colour <> Colour) Then
   Begin
     P := MiddleBox(Area);
+    GLHook_ShowNavBar;
     Mouse(P.X, P.Y, 10, 10, MOUSE_RIGHT);
-    Result := GLH_WaitOptionMulti(Text, 300);
+    GLHook_HideNavBar;
+    Result := GLH_WaitOptionMulti(Text, 1000);
   End Else
     Result := True;
 End;
@@ -74,7 +76,9 @@ Begin
     Result := SimilarColors(TextInfo[I].Colour, 13158600, 10) And ExecRegExpr('here to conti', TextInfo[I].Text);
     If (Result And Click) Then
     Begin
+      GLHook_ShowNavBar;
       Mouse(TextInfo[I].Area.X1 + RandomRange(0, 90), TextInfo[I].Area.Y1 + RandomRange(28, 32), 2, 1, True);
+      GLHook_HideNavBar;
       If Wait Then ChatWait;
     End;
     If Result Then Break;

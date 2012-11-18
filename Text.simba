@@ -65,7 +65,7 @@ End;
 
 Function GLH_GetLevelAtPos(X, Y: Integer): Integer;
 Begin
-  MMouse(X, Y, 0, 0);
+  MMouse(X, Y, 5, 5);
   Wait(RandomRange(80, 150));
   Result := StrToIntDef(Between('l: ', ')', GLH_GetUpText), -1);
 End;
@@ -101,13 +101,14 @@ Begin
   L := High(Texts);
 
   For I := 0 To L Do
-    For II := 0 To H Do
+    For II := H DownTo 0 Do
       If (Pos(Texts[I], TextInfo[II].Text) > 0) Then
       Begin
         Result := True;
         Bounds := TextInfo[II].Area;
         GetMousePos(MP.X, MP.Y);
 
+        GLHook_ShowNavBar;
         Case Action Of
           ClickLeft:
                        If PointInBox(MP, Bounds) Then
@@ -123,6 +124,7 @@ Begin
           Else
             Srl_Warn('GLH_ChooseOptionMultiEx', 'ClickRight Not A Valid Click For RS Menus!', Warn_AllVersions);
         End;
+        GLHook_HideNavBar;
         Exit;
       End;
 
@@ -131,7 +133,9 @@ Begin
     I := Max(MenuBounds.X1 - 52, 0);
     If (I = 0) Then
       I := MenuBounds.X2 + 10;
+    GLHook_ShowNavBar;
     MMouse(I, Max(MenuBounds.Y1 - 50, 0), 40, MenuBounds.Y2 - MenuBounds.Y1);
+    GLHook_HideNavBar;
     Wait(200 + Random(100));
   End;
 End;

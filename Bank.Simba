@@ -19,13 +19,15 @@ Var
 Begin
   Result := False;
   Timer := GetSystemTime + 10000;
+  GLHook_ShowNavBar;
   While GLH_PinScreen Do
   Begin
-    If (Timer > GetSystemTime) Then
+    If (Timer < GetSystemTime) Then
       Break;
-    MouseBox(332, 258, 489, 281, MOUSE_LEFT);
+    MouseBox(332, 308, 489, 331, MOUSE_LEFT);
     Wait(500);
   End;
+  GLHook_HideNavBar;
   Result := Not GLH_PinScreen;
 End;
 
@@ -54,6 +56,7 @@ Begin
 
   ItemArray := GLHook_GetItemsByID(GLI_Bank_PinButton);
 
+  GLHook_ShowNavBar;
   While GLH_PinScreen Do
   Begin
     For I := 0 To 4 Do
@@ -85,6 +88,7 @@ Begin
         End;
       End;
     End;
+    GLHook_HideNavBar;
 
     WaitFunc(@GLH_BankScreen, 50, 300);
     GLH_ClickContinue(True, True);
@@ -114,7 +118,9 @@ Begin
     End;
   End;
 
+  GLHook_ShowNavBar;
   Mouse(ItemArray[0].X, ItemArray[0].Y, 15, 10, True);
+  GLHook_HideNavBar;
   Wait(200 + Random(300));
 End;
 
@@ -140,6 +146,7 @@ Begin
   Begin
     ItemArray := GLHook_GetItemsByMeanID(GLI_Interface_MedButton, GLIM_BasicExit_MedButton, 5);
     Timer := GetTimeRunning + 8000;
+    GLHook_ShowNavBar;
     Repeat
       Mouse(ItemArray[0].X, ItemArray[0].Y, 5, 5, MOUSE_LEFT);
       For I := 0 To 30 Do
@@ -153,5 +160,6 @@ Begin
       End;
       Wait(Random(100));
     Until(GetTimeRunning > Timer) Or Result;
+    GLHook_HideNavBar;
   End;
 End;

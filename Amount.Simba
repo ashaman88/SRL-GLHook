@@ -9,7 +9,7 @@ Function GLH_ShopScreen: Boolean;
 var
   Fonts: TStringArray;
 Begin
-  Fonts := GLHook_FontsToText(GLHook_GetFontsByArea(IntToBox(66, 293, 157, 307)), False, 5, 0);
+  Fonts := GLHook_FontsToText(GLHook_GetFontsByArea(IntToBox(66, 293, 157, 307)), True, 4, 10);
   If (Length(Fonts) > 0) Then
     Result := (Fonts[0] = 'Select an item');
 End;

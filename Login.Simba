@@ -34,7 +34,11 @@ Begin
   Begin
     SkipButton := GLHook_GetItemsByID(GLI_ValidEmailExit);
     If (Length(SkipButton) > 0) Then
+    Begin
+      GLHook_ShowNavBar;
       MouseBox(SkipButton[0].SX[0], SkipButton[0].SY[0], SkipButton[0].SX[2], SkipButton[0].SY[2], MOUSE_LEFT);
+      GLHook_HideNavBar;
+    End;
     WaitFunc(@GLH_RSReady, 75, 3000);
   End;
   Result := GLH_RSReady;
@@ -54,7 +58,11 @@ Begin
   Begin
     ExitButton := GLHook_GetItemsByMeanID(GLI_Lobby_ExitButton, GLIM_Lobby_ExitButton, 5);
     If (Length(ExitButton) > 0) Then
+    Begin
+      GLHook_ShowNavBar;
       MouseBox(ExitButton[0].SX[0], ExitButton[0].SY[0], ExitButton[0].SX[2], ExitButton[0].SY[2], Mouse_Left);
+      GLHook_HideNavBar;
+    End;
     Wait(RandomRange(1000, 2000));
     Result := (Not (GLH_LobbyScreen));
   End;

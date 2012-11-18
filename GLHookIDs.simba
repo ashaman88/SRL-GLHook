@@ -18,6 +18,11 @@ type
 
   GLE_MMLevel = (GLE_MMLevel_Health, GLE_MMLevel_Prayer, GLE_MMLevel_RunEnergy, GLE_MMLevel_Summoning);
 
+  GLE_Spell_Type = (GLE_Spell_MeleeTab, GLE_Spell_RangedTab, GLE_Spell_MagicTab, GLE_Spell_OtherTab);
+
+  GLE_Spell_SubType = (GLE_Spell_None, GLE_Melee_Attack, GLE_Melee_Strength, GLE_Magic_Abilities, GLE_Magic_Combat, GLE_Magic_Transport,
+                       GLE_Magic_Skills, GLE_Other_Defense, GLE_Other_Constitution);
+
   GLE_Equipment = (GLE_Equipment_Aura, GLE_Equipment_Head, GLE_Equipment_Cloak, GLE_Equipment_Neck, GLE_Equipment_Quiver,
                    GLE_Equipment_RHand, GLE_Equipment_Torso, GLE_Equipment_LHand, GLE_Equipment_Legs,
                    GLE_Equipment_Gloves, GLE_Equipment_Boots, GLE_Equipment_Ring);
@@ -36,7 +41,7 @@ type
 
 //Client ID's.
 const
-  GLI_RSLogoID                      = 1393566;
+  GLI_RSLogoID                      = 14565855;
   GLI_LoginButton                   = 72450;
   GLI_LoginFaceBook                 = 571560;
   GLI_ValidEmailBox                 = 22731;
@@ -139,11 +144,9 @@ const
   GLIM_Combat_StyleNHover           = 2831931;
   GLIM_Combat_StyleCHover           = 6830363;
 
-  GLI_AutoRetaliate                 = 1267286;
-  GLIM_AutoRetaliate_Off            = 2303784;
-  GLIM_AutoRetaliate_On             = 4466453;
-  GLIM_AutoRetal_OffHover           = 3291709;
-  GLIM_AutoRetal_OnHover            = 6699550;
+  GLI_AutoRetaliate                 = 723913;
+  GLIM_AutoRetaliate                = 2299920;
+  GLIM_AutoRetaliateHover           = 3483418;
 
   GLI_NoticeBoard_NoTask            = 484500;
   GLI_Notice_OpenButton             = 43020;
@@ -174,39 +177,68 @@ const
   GLI_Skill_Hunting                 = 33773;
   GLI_Skill_Summoning               = 40105;
   GLI_Skill_Dungeoneering           = 62639;
+  GLI_Skill_DefenseAndConstitution  = 39978;
 
-  GLI_Equipment_Aura                = 56040;
-  GLI_Equipment_Head                = 48816;
-  GLI_Equipment_Cloak               = 25585;
-  GLI_Equipment_Neck                = 19539;
-  GLI_Equipment_Quiver              = 32177;
-  GLI_Equipment_Torso               = 28305;
-  GLI_Equipment_RHand               = 20464;
-  GLI_Equipment_LHand               = 21201;
-  GLI_Equipment_Legs                = 35152;
-  GLI_Equipment_Gloves              = 41890;
-  GLI_Equipment_Boots               = 38957;
-  GLI_Equipment_Ring                = 18368;
+  GLI_Equipment_Aura                = 58354;
+  GLI_Equipment_Head                = 36943;
+  GLI_Equipment_Cloak               = 46232;
+  GLI_Equipment_Neck                = 16329;
+  GLI_Equipment_Quiver              = 22332;
+  GLI_Equipment_Torso               = 38570;
+  GLI_Equipment_RHand               = 40422;
+  GLI_Equipment_LHand               = 14384;
+  GLI_Equipment_Legs                = 29447;
+  GLI_Equipment_Gloves              = 37889;
+  GLI_Equipment_Boots               = 32209;
+  GLI_Equipment_Ring                = 16487;
   GLI_Equipment_ShowEquip           = 106335;
   GLI_Equipment_ItemsKept           = 123675;
   GLI_Equipment_ToolBelt            = 111743;
   GLI_Equipment_Customize           = 136604;
-  GLIM_Equipment_Aura               = 2039584;
-  GLIM_Equipment_Head               = 1579033;
-  GLIM_Equipment_Cloak              = 789517;
-  GLIM_Equipment_Neck               = 657930;
-  GLIM_Equipment_Quiver             = 1052689;
-  GLIM_Equipment_Torso              = 921102;
-  GLIM_Equipment_RHand              = 592138;
-  GLIM_Equipment_LHand              = 789517;
-  GLIM_Equipment_Legs               = 1052689;
-  GLIM_Equipment_Gloves             = 1315861;
-  GLIM_Equipment_Boots              = 1250068;
-  GLIM_Equipment_Ring               = 592138;
+  GLIM_Equipment_Aura               = 3095618;
+  GLIM_Equipment_Head               = 1185562;
+  GLIM_Equipment_Cloak              = 2370866;
+  GLIM_Equipment_Neck               = 724497;
+  GLIM_Equipment_Quiver             = 1317148;
+  GLIM_Equipment_Torso              = 2107437;
+  GLIM_Equipment_RHand              = 1646628;
+  GLIM_Equipment_LHand              = 790546;
+  GLIM_Equipment_Legs               = 1514784;
+  GLIM_Equipment_Gloves             = 2041644;
+  GLIM_Equipment_Boots              = 1712164;
+  GLIM_Equipment_Ring               = 856339;
   GLIM_Equipment_ShowEquip          = 3682349;
   GLIM_Equipment_ItemsKept          = 4535590;
   GLIM_Equipment_ToolBelt           = 3812641;
   GLIM_Equipment_Customize          = 5987163;
+
+  GLI_MagicTab_CombatActive         = 2236930;
+  GLI_MagicTab_RangedActive         = 2236901;
+  GLI_MagicTab_MagicActive          = 2236932;
+  GLI_MagicTab_OtherActive          = 2236928;
+  GLIM_MagicTab_CombatActive        = 2170130;
+  GLIM_MagicTab_RangedActive        = 1317139;
+  GLIM_MagicTab_MagicActive         = 1185821;
+  GLIM_MagicTab_OtherActive         = 1971219;
+
+  GLI_Spell_Type                    = 137700;
+  GLI_Spell_Type_Active             = 202644;
+  GLI_MagicSub_CombatSpells         = 78771;
+  GLI_MagicSub_Transportation       = 87984;
+  GLI_MagicSub_Skills               = 79489;
+  GLIM_CombatSub_Active             = 5130559;
+  GLIM_RangedSub_Active             = 4344123;
+  GLIM_MagicSub_Active              = 3884622;
+  GLIM_OtherSub_Active              = 4734011;
+  GLIM_CombatSub_Attack             = 8020782;
+  GLIM_CombatSub_Strength           = 6570796;
+  GLIM_RangedSub_Ranged             = 3166999;
+  GLIM_MagicSub_Abilities           = 2379636;
+  GLIM_MagicSub_CombatSpells        = 8402697;
+  GLIM_MagicSub_Transportation      = 4211032;
+  GLIM_MagicSub_Skills              = 4474928;
+  GLIM_OtherSub_Defense             = 5659229;
+  GLIM_OtherSub_Constitution        = 6494490;
 
   GLI_MMPanel_Normal                = 86955;
   GLI_MMPanel_ToggleXP              = 166260;
@@ -293,6 +325,22 @@ const
   GLIM_Bank_SearchMode              = 1446930;
   GLIM_Bank_ShowEquipment           = 3682349;
 
+  GLI_ActionBarSlot                 = 137700;
+  GLI_ActionBarIndex                = 183514;
+  GLI_ActionBarLock                 = 53087;
+  GLI_ActionBarTrash                = 53087;
+  GLIM_ActionBarSlot                = 1051144;
+  GLIM_ActionBarIndex               = 1907481;
+  //GLIM_ActionBarLocked              = ;
+  GLIM_ActionBarUnlocked            = 2693901;
+  //GLIM_ActionBarLockedHover         = ;
+  GLIM_ActionBarUnlockedHover       = 4862745;
+  GLIM_ActionBarTrash               = 2299660;
+
+  GLI_CombatExperience_Melee        = 128772;
+  GLI_CombatExperience_Mage         = 278511;
+  GLI_CombatExperience_Range        = 171078;
+
   GLI_Texture                       = 3786240;
   GLI_Texture_ChatBox               = 17204850;
   GLIM_Texture_Water                = 8361138;
@@ -311,9 +359,7 @@ const
 //NPC IDs:
 
   GLM_NPC_PurpleBankFemale          = 3273447472;
-  GLM_NPC_PurpleBankMale            = 1775775211;
-  GLM_NPC_VarrockGuardOne           = 1569043836;
-  GLM_NPC_VarrockGuardTwo           = 1441885601;
+  GLM_NPC_PurpleBankMale            = 2177578229;
   GLM_NPC_GrandExchangeFemale       = 2253528948;
   GLM_NPC_GrandExchangeMale         = 2553342430;
   GLM_NPC_BobBarter                 = 40148168;
@@ -324,9 +370,7 @@ const
   GLM_NPC_BrugsenBursen             = 3829711705;
 
   GLMT_NPC_PurpleBankFemale         = 1270;
-  GLMT_NPC_PurpleBankMale           = 1121;
-  GLMT_NPC_VarrockGuardOne          = 1267;
-  GLMT_NPC_VarrockGuardTwo          = 1323;
+  GLMT_NPC_PurpleBankMale           = 1097;
   GLMT_NPC_GrandExchangeFemale      = 1209;
   GLMT_NPC_GrandExchangeMale        = 1585;
   GLMT_NPC_BobBarter                = 1176;
@@ -342,19 +386,9 @@ const
 
   GLM_Obj_EdgevilleBankBooth        = 1644377173;
   GLM_Obj_VarrockWestBankBooth      = 4216896244;
-  GLM_Obj_Door                      = 3072665158;
-  GLM_Obj_VBank_UpStairCase         = 1053311928;
-  GLM_Obj_VBank_DownStairCase       = 2290863208;
-  GLM_Obj_Anvil                     = 1628035397;
-  GLM_Obj_LogFire                   = 2057907316;
 
   GLMT_Obj_EdgevilleBankBooth       = 410;
   GLMT_Obj_VarrockWestBankBooth     = 150;
-  GLMT_Obj_Door                     = 290;
-  GLMT_Obj_VBankUpStairCase         = 610;
-  GLMT_Obj_VBankDownStairCase       = 388;
-  GLMT_Obj_Anvil                    = 84;
-  GLMT_Obj_LogFire                  = 388;
 
 
 
