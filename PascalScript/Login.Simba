@@ -1,0 +1,77 @@
+Function GLH_LoggedIn: Boolean;
+Begin
+  Result := (Length(GLHook_GetItemsByMeanID(GLI_ReportPlayer_Button, GLIM_ReportPlayer_Button, 5)) > 0);
+End;
+
+Function GLH_LobbyScreen: Boolean;
+Begin
+  Result := (Length(GLHook_GetItemsByID(GLI_LobbyTab)) = 6);
+End;
+
+Function GLH_RSReady: Boolean;
+var
+  Area: TBox;
+Begin
+  Result := (GLH_LoggedIn) Or (GLH_LobbyScreen);
+
+  If (Not Result) Then
+    Result := (Length(GLHook_GetItemsByID(GLI_RSLogoID)) > 0);
+
+  GLHGetViewPort(Area.X1, Area.Y1, Area.X2, Area.Y2);
+  If ((Area.X2 - Area.X1 > GLC_FixedWidth) or (Area.Y2 - Area.Y1 > GLC_FixedHeight)) Then
+  Begin
+    WriteLn('You are using the "Resizeable" screen option in RS.');
+    WriteLn('Please set it to "Fixed" to have SRL function properly.');
+    TerminateScript;
+  End;
+End;
+
+Function GLH_ValidEmail: Boolean;
+var
+  SkipButton: TPanelArray;
+Begin
+  While (Length(GLHook_GetItemsByID(GLI_ValidEmailBox)) > 0) Do
+  Begin
+    SkipButton := GLHook_GetItemsByID(GLI_ValidEmailExit);
+    If (Length(SkipButton) > 0) Then
+    Begin
+      GLHook_ShowNavBar;
+      MouseBox(SkipButton[0].SX[0], SkipButton[0].SY[0], SkipButton[0].SX[2], SkipButton[0].SY[2], MOUSE_LEFT);
+      GLHook_HideNavBar;
+    End;
+    WaitFunc(@GLH_RSReady, 75, 3000);
+  End;
+  Result := GLH_RSReady;
+End;
+
+Function GLH_ExitToLobby: Boolean;
+Begin
+End;
+
+Function GLH_LeaveLobby: Boolean;
+var
+  T: LongInt;
+  ExitButton: TPanelArray;
+Begin
+  T := GetSystemTime;
+  While ((Not (Result)) And ((GetSystemTime - T) < 30000)) Do
+  Begin
+    ExitButton := GLHook_GetItemsByMeanID(GLI_Lobby_ExitButton, GLIM_Lobby_ExitButton, 5);
+    If (Length(ExitButton) > 0) Then
+    Begin
+      GLHook_ShowNavBar;
+      MouseBox(ExitButton[0].SX[0], ExitButton[0].SY[0], ExitButton[0].SX[2], ExitButton[0].SY[2], Mouse_Left);
+      GLHook_HideNavBar;
+    End;
+    Wait(RandomRange(1000, 2000));
+    Result := (Not (GLH_LobbyScreen));
+  End;
+End;
+
+Function GLH_LogOut: Boolean;
+Begin
+End;
+
+Function GLH_LoginToLobby: Boolean;
+Begin
+End;

@@ -1,0 +1,86 @@
+Function GLH_GetCurrentTab: Integer; Forward;
+Function GLH_TabExists(Tab: Integer): Boolean; Forward;
+Function GLH_GameTab(Tab: Integer): Boolean; Forward;
+Function GLH_GetNPCChatName: String; Forward;
+
+Function GLH_WaitOptionMultiEx(Options: TStringArray; Action: Fnct_ActionOptions; Time: Integer): Boolean;
+var
+  T: Integer;
+begin
+  Result := False;
+  T := GetSystemTime + Time;
+  While (GetSystemTime < T) Do
+  Begin
+    If (GLH_ChooseOptionMultiEx(Options, Action)) Then
+    Begin
+      Result := True;
+      Exit;
+    End;
+    Wait(20 + Random(10));
+  End;
+End;
+
+Function GLH_WaitOptionMulti(Options: TStringArray; Time: Integer): Boolean;
+Begin
+  Result := GLH_WaitOptionMultiEx(Options, ClickLeft, Time);
+End;
+
+Function GLH_WaitOptionEx(Option: String; Action: Fnct_ActionOptions; Time: Integer): Boolean;
+Begin
+  Result := GLH_WaitOptionMultiEx([Option], Action, Time);
+End;
+
+Function GLH_WaitOption(Option: String; Time: Integer): Boolean;
+Begin
+  Result := GLH_WaitOptionMultiEx([Option], ClickLeft, Time);
+End;
+
+Function GLH_WaitUpTextMulti(Options: TStringArray; Time: Integer): Boolean;
+var
+  T: Integer;
+Begin
+  Result := False;
+  T := GetSystemTime + Time;
+  While (GetSystemTime < T) Do
+  Begin
+    If (GLH_IsUpTextMulti(Options)) Then
+    Begin
+      Result := True;
+      Exit;
+    End;
+    Wait(20 + Random(20));
+  End;
+End;
+
+Function GLH_WaitUptext(Option: String; Time: Integer): Boolean;
+Begin
+  Result := GLH_WaitUptextMulti([Option], Time);
+End;
+
+Function GLH_WaitTabExists(Tab, WaitTime: Integer): Boolean;
+var
+  T: Integer;
+Begin
+  T := GetTickCount + WaitTime;
+  Repeat
+    Result := GLH_TabExists(Tab);
+  Until(Result or (GetTickCount >= T));
+End;
+
+Function GLH_WaitNPCTalking(NPCName: String; WaitTime: Integer): Boolean;
+var
+  T: Integer;
+Begin
+  T := GetSystemTime + WaitTime;
+
+  While (GetSystemTime < T) Do
+  Begin
+    If (GetNPCChatName = NPCName) Then
+    Begin
+      Result := True;
+      Break;
+    End;
+
+    Wait(50 + Random(25));
+  End;
+End;

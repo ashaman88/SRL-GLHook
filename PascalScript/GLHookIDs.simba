@@ -1,0 +1,405 @@
+//Known Constants.
+
+const
+  GLC_FixedWidth  = 765;
+  GLC_FixedHeight = 553;
+
+  GLC_UpTextX1    = 4;
+  GLC_UpTextY1    = 52;
+  GLC_UpTextX2    = 310;
+  GLC_UpTextY2    = 76;
+
+
+//Known Enumerations.
+
+type
+  GLE_ChatState = (GLE_ChatState_All, GLE_ChatState_On, GLE_ChatState_Off, GLE_ChatState_Hide,
+                   GLE_ChatState_Friends, GLE_ChatState_Filter, GLE_ChatState_XP, GLE_ChatState_None);
+
+  GLE_MMLevel = (GLE_MMLevel_Health, GLE_MMLevel_Prayer, GLE_MMLevel_RunEnergy, GLE_MMLevel_Summoning);
+
+  GLE_Spell_Type = (GLE_Spell_None, GLE_Spell_MeleeTab, GLE_Spell_RangedTab, GLE_Spell_MagicTab, GLE_Spell_OtherTab);
+
+  GLE_Spell_SubType = (GLE_Spell_None, GLE_Melee_Attack, GLE_Melee_Strength, GLE_Magic_Abilities, GLE_Magic_Combat, GLE_Magic_Transport,
+                       GLE_Magic_Skills, GLE_Other_Defense, GLE_Other_Constitution);
+
+  GLE_Equipment = (GLE_Equipment_Aura, GLE_Equipment_Head, GLE_Equipment_Cloak, GLE_Equipment_Neck, GLE_Equipment_Quiver,
+                   GLE_Equipment_RHand, GLE_Equipment_Torso, GLE_Equipment_LHand, GLE_Equipment_Legs,
+                   GLE_Equipment_Gloves, GLE_Equipment_Boots, GLE_Equipment_Ring);
+
+  GLE_ChatState_Array = Array Of GLE_ChatState;
+  GLE_Equipment_Array = Array Of GLE_Equipment;
+
+
+{*
+  GLI   = ImageID.
+  GLIM  = ImageMeanID.
+  GLIMT = ImageMeanIDTolerance.
+  GLM   = ModelID.
+  GLMT  = ModelTriangleCount.
+*}
+
+//Client ID's.
+const
+  GLI_RSLogoID                      = 14565855;
+  GLI_LoginButton                   = 72450;
+  GLI_LoginFaceBook                 = 571560;
+  GLI_ValidEmailBox                 = 22731;
+  GLI_ValidEmailExit                = 18969;
+  GLI_ValidEmailCape                = 536723;
+  GLI_FreeMemberTrial               = 6643195;
+
+  GLI_WorldStar_Selected            = 14280;
+  GLIM_WorldStar_F2P                = 4144442;
+  GLIM_WorldStar_P2P                = 4471837;
+
+  GLI_WorldList_Loot                = 6375;
+  GLI_WorldList_NoLoot              = 7395;
+  GLIM_WorldList_Loot               = 1578000;
+  GLIM_WorldList_NoLoot             = 1904910;
+
+  GLI_LobbyTab                      = 564570;
+  GLI_LobbyTab_Icon                 = 56100;
+  GLI_Lobby_ExitButton              = 9369;
+  GLI_Lobby_PlayButton              = 159375;
+  GLIM_LobbyTab_Active              = 3749425;
+  GLIM_LobbyTab_InActive            = 2696739;
+  GLIM_Lobby_ExitButton             = 2169371;
+  GLIM_Lobby_WorldList              = 3623998;
+  GLIM_Lobby_PlayerInfo             = 3688266;
+  GLIM_Lobby_FriendsList            = 3885871;
+  GLIM_Lobby_FriendChat             = 4612915;
+  GLIM_Lobby_ClanChat               = 6573875;
+  GLIM_Lobby_Options                = 3683885;
+  GLIM_Lobby_PlayButton             = 8613438;
+
+  GLI_WorldList_Refresh             = 82365;
+  GLIM_WorldList_Refresh            = 4085853;
+
+  GLI_SquealGoblin                  = 312863;
+  GLI_Squeal_ExitButton             = 11270;
+  GLIM_Squeal_ExitButton            = 2362638;
+
+  GLI_GameChat_Active               = 139230;
+  GLI_GameChat_InActive             = 138975;
+  GLIM_GameChat_Selected            = 5457460;
+  GLIM_GameChat_Normal              = 3683116;
+
+  GLI_ReportPlayer_Button           = 279225;
+  GLIM_ReportPlayer_Button          = 6168606;
+
+  GLI_Interface_SmlButton           = 12240;
+  GLI_Interface_MedButton           = 16320;
+  GLI_BasicExit_SmlButton           = 3419942;
+  GLIM_BasicExit_MedButton          = 4143405;
+  GLIM_Scroll_SmBasicArrow          = 3880491;
+
+  GLI_GameTab_ExitTo_Btn            = 171870;
+  GLI_GameTab_Background            = 191250;
+  GLI_GameTab_Selected              = 48705;
+  GLI_GameTab_Combat                = 31110;
+  GLI_GameTab_Notice                = 49470;
+  GLI_GameTab_Stats                 = 48705;
+  GLI_GameTab_Inventory             = 45135;
+  GLI_GameTab_Equipment             = 35445;
+  GLI_GameTab_Prayer                = 21420;
+  GLI_GameTab_Magic                 = 34935;
+  GLI_GameTab_Extras                = 24990;
+  GLI_GameTab_FriendsList           = 42585;
+  GLI_GameTab_FriendsChat           = 42330;
+  GLI_GameTab_ClanChat              = 42330;
+  GLI_GameTab_Options               = 30345;
+  GLI_GameTab_Emotes                = 43860;
+  GLI_GameTab_Music                 = 44115;
+  GLI_GameTab_Notes                 = 27540;
+  GLI_GameTab_LogOut                = 46665;
+  GLI_GameTab_LogOut_Btn            = 201960;
+  GLIM_GameTab_ExitTo_Btn           = 6493974;
+  GLIM_GameTab_Background           = 6707270;
+  GLIM_GameTab_Selected             = 2629392;
+  GLIM_GameTab_Combat               = 4534812;
+  GLIM_GameTab_Notice               = 7300172;
+  GLIM_GameTab_Stats                = 4736586;
+  GLIM_GameTab_Inventory            = 3218958;
+  GLIM_GameTab_Equipment            = 4803401;
+  GLIM_GameTab_Prayer               = 2831669;
+  GLIM_GameTab_Magic                = 4010786;
+  GLIM_GameTab_Extras               = 4008503;
+  GLIM_GameTab_FriendsList          = 4410149;
+  GLIM_GameTab_FriendsChat          = 3753770;
+  GLIM_GameTab_ClanChat             = 6769420;
+  GLIM_GameTab_Options              = 2104598;
+  GLIM_GameTab_Emotes               = 4867129;
+  GLIM_GameTab_Music                = 5853246;
+  GLIM_GameTab_Notes                = 3616805;
+  GLIM_GameTab_LogOutHover          = 5981710;
+  GLIM_GameTab_LogOut_Btn           = 7740442;
+
+  GLI_GameTab_CombatStyle           = 551423;
+  GLI_GameTab_CombatPunch           = 54578;
+  GLI_GameTab_CombatKick            = 60992;
+  GLI_GameTab_CombatBlock           = 77536;
+  GLIM_Combat_StyleNormal           = 1712420;
+  GLIM_Combat_StyleCurrent          = 4334353;
+  GLIM_Combat_StyleNHover           = 2831931;
+  GLIM_Combat_StyleCHover           = 6830363;
+
+  GLI_AutoRetaliate                 = 723913;
+  GLIM_AutoRetaliate                = 2299920;
+  GLIM_AutoRetaliateHover           = 3483418;
+
+  GLI_NoticeBoard_NoTask            = 484500;
+  GLI_Notice_OpenButton             = 43020;
+  GLI_Notice_Exit                   = 18969;
+
+  GLI_Skill_Attack                  = 19987;
+  GLI_Skill_Constitution            = 39978;
+  GLI_Skill_Mining                  = 19123;
+  GLI_Skill_Strength                = 42199;
+  GLI_Skill_Agility                 = 35940;
+  GLI_Skill_Smithing                = 34831;
+  GLI_Skill_Defense                 = 44198;
+  GLI_Skill_Herblore                = 56516;
+  GLI_Skill_Fishing                 = 57796;
+  GLI_Skill_Range                   = 25698;
+  GLI_Skill_Theiving                = 27478;
+  GLI_Skill_Cooking                 = 51495;
+  GLI_Skill_Prayer                  = 30182;
+  GLI_Skill_Crafting                = 37599;
+  GLI_Skill_FireMaking              = 48964;
+  GLI_Skill_Magic                   = 54428;
+  GLI_Skill_Fletching               = 22836;
+  GLI_Skill_WoodCutting             = 47644;
+  GLI_Skill_RuneCrafting            = 36826;
+  GLI_Skill_Slayer                  = 57788;
+  GLI_Skill_Farming                 = 37657;
+  GLI_Skill_Construction            = 57334;
+  GLI_Skill_Hunting                 = 33773;
+  GLI_Skill_Summoning               = 40105;
+  GLI_Skill_Dungeoneering           = 62639;
+  GLI_Skill_DefenseAndConstitution  = 39978;
+
+  GLI_Equipment_Aura                = 58354;
+  GLI_Equipment_Head                = 36943;
+  GLI_Equipment_Cloak               = 46232;
+  GLI_Equipment_Neck                = 16329;
+  GLI_Equipment_Quiver              = 22332;
+  GLI_Equipment_Torso               = 38570;
+  GLI_Equipment_RHand               = 40422;
+  GLI_Equipment_LHand               = 14384;
+  GLI_Equipment_Legs                = 29447;
+  GLI_Equipment_Gloves              = 37889;
+  GLI_Equipment_Boots               = 32209;
+  GLI_Equipment_Ring                = 16487;
+  GLI_Equipment_ShowEquip           = 106335;
+  GLI_Equipment_ItemsKept           = 123675;
+  GLI_Equipment_ToolBelt            = 111743;
+  GLI_Equipment_Customize           = 136604;
+  GLIM_Equipment_Aura               = 3095618;
+  GLIM_Equipment_Head               = 1185562;
+  GLIM_Equipment_Cloak              = 2370866;
+  GLIM_Equipment_Neck               = 724497;
+  GLIM_Equipment_Quiver             = 1317148;
+  GLIM_Equipment_Torso              = 2107437;
+  GLIM_Equipment_RHand              = 1646628;
+  GLIM_Equipment_LHand              = 790546;
+  GLIM_Equipment_Legs               = 1514784;
+  GLIM_Equipment_Gloves             = 2041644;
+  GLIM_Equipment_Boots              = 1712164;
+  GLIM_Equipment_Ring               = 856339;
+  GLIM_Equipment_ShowEquip          = 3682349;
+  GLIM_Equipment_ItemsKept          = 4535590;
+  GLIM_Equipment_ToolBelt           = 3812641;
+  GLIM_Equipment_Customize          = 5987163;
+
+  GLI_MagicTab_CombatActive         = 2236930;
+  GLI_MagicTab_RangedActive         = 2236901;
+  GLI_MagicTab_MagicActive          = 2236932;
+  GLI_MagicTab_OtherActive          = 2236928;
+  GLIM_MagicTab_CombatActive        = 2170130;
+  GLIM_MagicTab_RangedActive        = 1317139;
+  GLIM_MagicTab_MagicActive         = 1185821;
+  GLIM_MagicTab_OtherActive         = 1971219;
+
+  GLI_Spell_Type                    = 137700;
+  GLI_Spell_Type_Active             = 202644;
+  GLI_MagicSub_CombatSpells         = 78771;
+  GLI_MagicSub_Transportation       = 87984;
+  GLI_MagicSub_Skills               = 79489;
+  GLIM_CombatSub_Active             = 5130559;
+  GLIM_RangedSub_Active             = 4344123;
+  GLIM_MagicSub_Active              = 3884622;
+  GLIM_OtherSub_Active              = 4734011;
+  GLIM_CombatSub_Attack             = 8020782;
+  GLIM_CombatSub_Strength           = 6570796;
+  GLIM_RangedSub_Ranged             = 3166999;
+  GLIM_MagicSub_Abilities           = 2379636;
+  GLIM_MagicSub_CombatSpells        = 8402697;
+  GLIM_MagicSub_Transportation      = 4211032;
+  GLIM_MagicSub_Skills              = 4474928;
+  GLIM_OtherSub_Defense             = 5659229;
+  GLIM_OtherSub_Constitution        = 6494490;
+
+  GLI_MMPanel_Normal                = 86955;
+  GLI_MMPanel_ToggleXP              = 166260;
+  GLI_MMPanel_XPBarShowing          = 48705;
+  GLI_MMPanel_MoneyPouch            = 30345;
+  GLI_MMPanel_MoneyBacking          = 159120;
+  GLI_MMPanel_MoneyPouchOn          = 227970;
+  GLI_MMPanel_WorldMap              = 164730;
+  GLI_MMPanel_RunEnergy             = 16830;
+  GLI_MMPanel_Resting               = 21420;
+  GLI_MMPanel_Health                = 2040;
+  GLI_MMPanel_Prayer                = 12750;
+  GLI_MMPanel_Summoning             = 10455;
+  GLIM_MMPanel_ToggleXP             = 7559212;
+  GLIM_MMPanel_XPHover              = 6047525;
+  GLIM_MMPanel_WorldHover           = 6849921;
+  GLIM_MMPanel_RunOn                = 7626790;
+  GLIM_MMPanel_RunOff               = 5322271;
+  GLIM_MMPanel_Resting              = 2702881;
+  GLIM_MMPanel_Health               = 2098945;
+  GLIM_MMPanel_PrayerOn             = 7505518;
+  GLIM_MMPanel_PrayerOff            = 3220555;
+  GLIM_MMPanel_MoneyHover           = 3953254;
+
+  GLI_ChatBubble                    = 24990;
+  GLIM_ChatBubble                   = 9011845;
+
+
+  GLI_Icon_Clicked                  = 2528;
+  GLIM_Icon_YellowClick             = 592641;
+  GLIM_Icon_RedClick                = 917505;
+
+  GLI_MMIcon_Dot                    = 3570;
+  GLIM_MMIcon_YellowDot             = 9605633;
+  GLIM_MMIcon_WhiteDot              = 10065045;
+  GLIM_MMIcon_RedDot                = 9372932;
+  GLIM_MMIcon_AquaDot               = 9868546;
+
+  GLI_MMSymbol_Small                = 6375;
+  GLI_MMSymbol_Medium               = 27030;
+  GLI_MMSymbol_Flag                 = 1275;
+  GLIM_MMSymbol_Flag                = 1117453;
+  GLIM_MMSymbol_Bank                = 2827799;
+  GLIM_MMSymbol_GrandExchange       = 2828584;
+  GLIM_MMSymbol_RareTrees           = 3157806;
+  GLIM_MMSymbol_Loyalty             = 3289651;
+  GLIM_MMSymbol_LodeStone           = 2238005;
+  GLIM_MMSymbol_Tannery             = 3750201;
+  GLIM_MMSymbol_Dungeon             = 4340024;
+  GLIM_MMSymbol_RunecraftingAltar   = 2958114;
+  GLIM_MMSymbol_GeneralStore        = 3025703;
+  GLIM_MMSymbol_StaffShop           = 3815994;
+  GLIM_MMSymbol_WaterSource         = 3684409;
+  GLIM_MMSymbol_RestingSpot         = 3749945;
+  GLIM_MMSymbol_PlateBody           = 3750201;
+  GLIM_MMSymbol_ArcheryShop         = 3815994;
+  GLIM_MMSymbol_QuestStart          = 3553082;
+  GLIM_MMSymbol_Anvil               = 3684408;
+  GLIM_MMSymbol_CookingRange        = 3881787;
+
+  GLI_Compass_Icon                  = 507195;
+  GLIM_Compass_Icon                 = 6051142;
+
+  GLI_Bank_PinButton                = 848640;
+  GLIM_Bank_PinButton               = 6297616;
+  GLI_Bank_BtnBackgrnd              = 114495;
+  GLI_Bank_Note                     = 22950;
+  GLI_Bank_Deposit_Money            = 43350;
+  GLI_Bank_Deposit_Items            = 39780;
+  GLI_Bank_Deposit_Follower         = 37740;
+  GLI_Bank_Deposit_Equipment        = 26010;
+  GLI_Bank_SwitchMode               = 13515;
+  GLI_Bank_SearchMode               = 9435;
+  GLI_Bank_ShowEquipment            = 106335;
+  GLIM_Bank_BtnBackgrndOn           = 3682342;
+  GLIM_Bank_BtnBackgrndOff          = 5523773;
+  GLIM_Bank_Note_Normal             = 7302232;
+  GLIM_Bank_Note_Selected           = 4670516;
+  GLIM_Bank_Deposit_Money           = 4542497;
+  GLIM_Bank_Deposit_Items           = 2766353;
+  GLIM_Bank_Deposit_Follower        = 3362361;
+  GLIM_Bank_Deposit_Equipment       = 1190674;
+  GLIM_Bank_SwitchMode              = 1381651;
+  GLIM_Bank_SearchMode              = 1446930;
+  GLIM_Bank_ShowEquipment           = 3682349;
+
+  GLI_ActionBarSlot                 = 137700;
+  GLI_ActionBarIndex                = 183514;
+  GLI_ActionBarLock                 = 53087;
+  GLI_ActionBarTrash                = 53087;
+  GLIM_ActionBarSlot                = 1051144;
+  GLIM_ActionBarIndex               = 1907481;
+  //GLIM_ActionBarLocked              = ;
+  GLIM_ActionBarUnlocked            = 2693901;
+  //GLIM_ActionBarLockedHover         = ;
+  GLIM_ActionBarUnlockedHover       = 4862745;
+  GLIM_ActionBarTrash               = 2299660;
+
+  GLI_CombatExperience_Melee        = 128772;
+  GLI_CombatExperience_Mage         = 278511;
+  GLI_CombatExperience_Range        = 171078;
+
+  GLI_Texture                       = 3786240;
+  GLI_Texture_ChatBox               = 17204850;
+  GLIM_Texture_Water                = 8361138;
+  GLIM_Texture_Lava                 = 16361547;
+  GLIM_Texture_StoneWall            = 7829099;
+  GLIM_Texture_ChatBox              = 13285783;
+
+  GLI_Texture_OptionMenuTitle       = 2040;
+  GLI_Texture_OptionMenuTopCorner   = 6120;
+  GLI_Texture_OptionMenuLowCorner   = 8925;
+  GLIM_Texture_OptionMenuTitle      = 921613;
+  GLIM_Texture_OptionMenuTopCorner  = 5921370;
+  GLIM_Texture_OptionMenuLowCorner  = 4079167;
+
+
+//NPC IDs:
+
+  GLM_NPC_PurpleBankFemale          = 3273447472;
+  GLM_NPC_PurpleBankMale            = 2177578229;
+  GLM_NPC_GrandExchangeFemale       = 2253528948;
+  GLM_NPC_GrandExchangeMale         = 2553342430;
+  GLM_NPC_BobBarter                 = 40148168;
+  GLM_NPC_FaridMorrisane            = 1873423136;
+  GLM_NPC_ReloboBlinyo              = 830120687;
+  GLM_NPC_Hofuthand                 = 742643267;
+  GLM_NPC_GrandExchangeTutor        = 901994727;
+  GLM_NPC_BrugsenBursen             = 3829711705;
+
+  GLMT_NPC_PurpleBankFemale         = 1270;
+  GLMT_NPC_PurpleBankMale           = 1097;
+  GLMT_NPC_GrandExchangeFemale      = 1209;
+  GLMT_NPC_GrandExchangeMale        = 1585;
+  GLMT_NPC_BobBarter                = 1176;
+  GLMT_NPC_FaridMorrisane           = 908;
+  GLMT_NPC_ReloboBlinyo             = 1392;
+  GLMT_NPC_Hofuthand                = 1124;
+  GLMT_NPC_GrandExchangeTutor       = 1089;
+  GLMT_NPC_BrugsenBursen            = 1833;
+
+
+
+//Object IDs:
+
+  GLM_Obj_EdgevilleBankBooth        = 1644377173;
+  GLM_Obj_VarrockWestBankBooth      = 4216896244;
+
+  GLMT_Obj_EdgevilleBankBooth       = 410;
+  GLMT_Obj_VarrockWestBankBooth     = 150;
+
+
+
+Function InArray(Arr: GLE_Equipment_Array; Which: GLE_Equipment): Boolean;
+var
+  I: Integer;
+Begin
+  For I := 0 To High(Arr) Do
+    If (Arr[I] = Which) Then
+    Begin
+      Result := True;
+      Exit;
+    End;
+End;

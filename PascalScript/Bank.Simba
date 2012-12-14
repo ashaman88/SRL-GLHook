@@ -1,0 +1,165 @@
+Function GLH_BankScreen: Boolean;
+Begin
+  Result := GLHook_FindTextAreaEx(IntToBox(195, 76, 324, 96), ['Bank', 'Bank of Runescape'], True, 5, 10);
+End;
+
+Function GLH_DepositScreen: Boolean;
+Begin
+  Result := GLHook_FindTextAreaEx(IntToBox(144, 83, 396, 101), ['Deposit', 'Box'], True, 4, 10);
+End;
+
+Function GLH_PinScreen: Boolean;
+Begin
+  Result := (Length(GLHook_GetItemsByMeanID(GLI_Bank_PinButton, GLIM_Bank_PinButton, 5)) > 0);
+End;
+
+Function GLH_ClosePinScreen: Boolean;
+Var
+  Timer : Integer;
+Begin
+  Result := False;
+  Timer := GetSystemTime + 10000;
+  GLHook_ShowNavBar;
+  While GLH_PinScreen Do
+  Begin
+    If (Timer < GetSystemTime) Then
+      Break;
+    MouseBox(332, 308, 489, 331, MOUSE_LEFT);
+    Wait(500);
+  End;
+  GLHook_HideNavBar;
+  Result := Not GLH_PinScreen;
+End;
+
+Function GLH_InPin(Pin: String): Boolean;
+Var
+  PinBox: TBox;
+  I, J, H, Tries, X, Y: Integer;
+  QuestionCount: Integer;
+  ItemArray: TPanelArray;
+Begin
+  Result := False;
+  If (Not GLH_PinScreen) Then
+    Exit;
+
+  If (GetNumbers(Pin) <> Pin) Then
+  Begin
+    SRL_Warn('GLH_InPin', '''' + Pin + ''' is not a valid Pin', Warn_AllVersions);
+    Exit;
+  End;
+
+  If (Length(Pin) <> 4) Then
+  Begin
+    SRL_Warn('GLH_InPin', 'Pin must be 4 digits long', Warn_AllVersions);
+    Exit;
+  End;
+
+  ItemArray := GLHook_GetItemsByID(GLI_Bank_PinButton);
+
+  GLHook_ShowNavBar;
+  While GLH_PinScreen Do
+  Begin
+    For I := 0 To 4 Do
+    Begin
+      If (Not GLH_PinScreen) Then Break;
+
+      QuestionCount := GLHook_CountTextInArea(IntToBox(426, 85, 494, 101), '?', False, 5, 0);
+      GetMousePos(X, Y);
+      H := High(ItemArray);
+      For J := 0 To H Do
+      Begin
+        PinBox:= IntToBox(ItemArray[J].SX[0], ItemArray[J].SY[0], ItemArray[J].SX[2], ItemArray[J].SY[2]);
+        If (GLHook_FindTextAreaEx(PinBox, [Pin[I]], False, 0, 0)) Then
+        Begin
+          If GLH_PinScreen Then
+            MouseBox(PinBox.X1, PinBox.Y1, PinBox.X2, PinBox.Y2, MOUSE_LEFT);
+          Break;
+        End;
+
+        Wait(100);
+        While (GLHook_CountTextInArea(IntToBox(426, 85, 494, 101), '?', False, 5, 0) = QuestionCount) Do
+          Wait(500);
+
+        Wait(RandomRange(300, 600));
+        If (GLH_BankScreen Or (Not GLH_PinScreen)) Then
+        Begin
+          Result := True;
+          Exit;
+        End;
+      End;
+    End;
+    GLHook_HideNavBar;
+
+    WaitFunc(@GLH_BankScreen, 50, 300);
+    GLH_ClickContinue(True, True);
+
+    Inc(Tries);
+    If (Tries > 2) Then
+    Begin
+      SRL_Warn('GLH_InPin', '''' + Pin + ''' is not the correct Pin', Warn_AllVersions);
+      GLH_ClosePinScreen;
+      Exit;
+    End;
+  End;
+  Result := GLH_BankScreen;
+End;
+
+Procedure GLH_QuickDeposit(Which: Integer);
+Var
+  ItemArray: TPanelArray;
+Begin
+  If (GLH_BankScreen Or GLH_DepositScreen) Then
+  Begin
+    Case Which Of
+      SRL_DEPOSIT_ALL:          ItemArray := GLHook_GetItemsByMeanID(GLI_Bank_Deposit_Items, GLIM_Bank_Deposit_Items, 5);
+      SRL_DEPOSIT_EQUIPMENT:    ItemArray := GLHook_GetItemsByMeanID(GLI_Bank_Deposit_Equipment, GLIM_Bank_Deposit_Equipment, 5);
+      SRL_DEPOSIT_FOLLOWER:     ItemArray := GLHook_GetItemsByMeanID(GLI_Bank_Deposit_Follower, GLIM_Bank_Deposit_Follower, 5);
+      SRL_DEPOSIT_COINS:        ItemArray := GLHook_GetItemsByMeanID(GLI_Bank_Deposit_Money, GLIM_Bank_Deposit_Money, 5);
+    End;
+  End;
+
+  GLHook_ShowNavBar;
+  Mouse(ItemArray[0].X, ItemArray[0].Y, 15, 10, True);
+  GLHook_HideNavBar;
+  Wait(200 + Random(300));
+End;
+
+Function GLH_DepositAll: Boolean;
+Begin
+  If (InvEmpty) Then
+  Begin
+    Result := True;
+    Exit;
+  End;
+
+  GLH_QuickDeposit(SRL_DEPOSIT_ALL);
+  Result := WaitFunc(@InvEmpty, 50, 3000);
+End;
+
+Function GLH_CloseBankScreen: Boolean;
+Var
+  I, Timer: Integer;
+  ItemArray: TPanelArray;
+Begin
+  Result := False;
+  If GLH_BankScreen Then
+  Begin
+    ItemArray := GLHook_GetItemsByMeanID(GLI_Interface_MedButton, GLIM_BasicExit_MedButton, 5);
+    Timer := GetTimeRunning + 8000;
+    GLHook_ShowNavBar;
+    Repeat
+      Mouse(ItemArray[0].X, ItemArray[0].Y, 5, 5, MOUSE_LEFT);
+      For I := 0 To 30 Do
+      Begin
+        If (Not GLH_BankScreen) Then
+        Begin
+          Result := True;
+          Exit;
+        End;
+        Wait(100);
+      End;
+      Wait(Random(100));
+    Until(GetTimeRunning > Timer) Or Result;
+    GLHook_HideNavBar;
+  End;
+End;

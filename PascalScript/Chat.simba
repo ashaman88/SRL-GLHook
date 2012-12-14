@@ -4,6 +4,7 @@ Function GLH_SetChat(State: GLE_ChatState; Chat: Integer): Boolean;
 var
   P: TPoint;
   Area: TBox;
+  Fonts: TFontArray;
   Text: TStringArray;
   Chats: TTextInfoArray;
   BoxOffset, Colour: Integer;
@@ -17,7 +18,8 @@ Begin
   Result := False;
   BoxOffset := (Chat + 1) * 57;
   Area := IntToBox(2 + BoxOffset, 530, 59 + BoxOffset, 552);
-  Chats := GLHook_FontsToTextEx(GLHook_GetFontsByArea(Area), True, 4, 10);
+  Fonts := GLHook_GetFontsByArea(Area);
+  Chats := GLHook_FontsToTextEx(Fonts, True, 4, 10);
   If (Length(Chats) < 1) Then Exit;
 
   Case State Of
@@ -65,9 +67,11 @@ End;
 Function GLH_ClickContinueEx(Click, Wait: Boolean): Boolean;
 var
   I: Integer;
+  Fonts: TFontArray;
   TextInfo: TTextInfoArray;
 Begin
-  TextInfo := GLHook_FontsToTextEx(GLHook_GetFontsByArea(IntToBox(MCX1, MCY1, MCX2, MCY2)), False, 4, 10);
+  Fonts := GLHook_GetFontsByArea(IntToBox(MCX1, MCY1, MCX2, MCY2));
+  TextInfo := GLHook_FontsToTextEx(Fonts, False, 4, 10);
   If (Length(TextInfo) < 1) Then
     Exit;
 
@@ -93,11 +97,13 @@ Function GLH_GetChatBoxTextEx(LineNumber, Colour: Integer): String;
 var
   P: TPoint;
   Bounds: TBox;
+  Fonts: TFontArray;
   TextInfo: TTextInfoArray;
 Begin
   P := TextCoords(LineNumber);
   Bounds := IntToBox(MCX1, P.Y, MCX2, P.Y + 13);
-  TextInfo := GLHook_FontsToTextEx(GLHook_GetFontsByArea(Bounds), False, 4, 10);
+  Fonts := GLHook_GetFontsByArea(Bounds);
+  TextInfo := GLHook_FontsToTextEx(Fonts, False, 4, 10);
   If ((Length(TextInfo) > 0) And (TextInfo[0].Colour = Colour)) Then Result := TextInfo[0].Text;
 End;
 
@@ -105,11 +111,13 @@ Function GLH_GetChatBoxText(LineNumber: Integer): String;
 var
   P: TPoint;
   Bounds: TBox;
+  Fonts: TFontArray;
   Text: TStringArray;
 Begin
   P := TextCoords(LineNumber);
   Bounds := IntToBox(MCX1, P.Y, MCX2, P.Y + 13);
-  Text := GLHook_FontsToText(GLHook_GetFontsByArea(Bounds), False, 4, 10);
+  Fonts := GLHook_GetFontsByArea(Bounds);
+  Text := GLHook_FontsToText(Fonts, False, 4, 10);
   If (Length(Text) > 0) Then Result := Text[0];
 End;
 
@@ -135,8 +143,11 @@ Begin
 End;
 
 Function GLH_ChatBoxTextArray: TStringArray;
+var
+  Fonts: TFontArray;
 Begin
-  Result := GLHook_FontsToText(GLHook_GetFontsByArea(IntToBox(MCX1, MCY1, MCX2, MCY2 - 13)), False, 4, 10);
+  Fonts := GLHook_GetFontsByArea(IntToBox(MCX1, MCY1, MCX2, MCY2 - 13));
+  Result := GLHook_FontsToText(Fonts, False, 4, 10);
 End;
 
 Function GLH_GetBlackChatMessage: String;
@@ -174,9 +185,11 @@ End;
 
 Function GLH_GetNPCChatName: String;
 var
+  Fonts: TFontArray;
   TextInfo: TTextInfoArray;
 Begin
-  TextInfo := GLHook_FontsToTextEx(GLHook_GetFontsByArea(IntToBox(152, 345, 366, 370)), False, 4, 10);
+  Fonts := GLHook_GetFontsByArea(IntToBox(152, 345, 366, 370));
+  TextInfo := GLHook_FontsToTextEx(Fonts, False, 4, 10);
   If ((Length(TextInfo) > 0) And (TextInfo[0].Colour = 7913190)) Then
     Result := TextInfo[0].Text;
 End;

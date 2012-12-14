@@ -137,7 +137,7 @@ End;
 
 Function GLH_SpellTab(SpellTab: GLE_Spell_Type; SpellSubTab: GLE_Spell_SubType): Boolean;
 var
-  Tries, Tab, SubTab: Integer;
+  Tries, Tab: Integer;
   TabIDs, SubTabs: TIntegerArray;
   ActiveTab, Bounds: TPanelArray;
 Begin
@@ -353,9 +353,8 @@ End;
 Function GLH_SetupXP(Skill, Style: Integer): Boolean; Overload;
 var
   Bounds: TBox;
-  I, Styles: Integer;
+  Styles: Integer;
   Index: TPanelArray;
-  Text: TStringArray;
   CombatTypes: TIntegerArray;
 Begin
   CombatTypes := [GLI_CombatExperience_Melee, GLI_CombatExperience_Mage, GLI_CombatExperience_Range];
@@ -399,8 +398,6 @@ End;
 
 Procedure GLH_Retaliate(TurnOn: Boolean);
 Var
-  X, Y: Integer;
-  Text: TStringArray;
   Button: TPanelArray;
 Begin
   Button := GLHook_GetItemsByID(GLI_AutoRetaliate);

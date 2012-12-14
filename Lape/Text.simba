@@ -14,10 +14,7 @@ End;
 Function GLH_ExtractFromString(Text: String; Extract: GLH_StringExtract): String;
 var
   I: Integer;
-  Range: Set Of Char;
 Begin
-  Result := '';
-
   For I := Length(Text) DownTo 1 Do
     If GLH_CharInRange(Text[I], Extract) Then
       Result := Text[I] + Result;
@@ -90,7 +87,6 @@ var
   MenuBounds: TBox;
   I, II, H, L: Integer;
   TextInfo: TTextInfoArray;
-  TopCorner, LowCorner: TPanelArray;
 Begin
   Result := False;
   TextInfo := GLH_GetChooseOptions(MenuBounds);

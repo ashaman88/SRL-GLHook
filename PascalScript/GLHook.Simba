@@ -1,0 +1,24 @@
+{$Define GLHook}
+{$include_once SRL/SRL.Simba}
+
+Procedure GLHook_HideNavBar;
+Begin
+  SRL_DisableNavBar;          //Comment out to enable normal mouse movement. For testing..
+End;
+
+Procedure GLHook_ShowNavBar;
+Begin
+  SRL_EnableNavBar;
+End;
+
+{$include_once GLHook/GLHookIDs.Simba}
+{$include_once GLHook/GLCommunication.Simba}
+{$include_once GLHook/Text.Simba}
+{$include_once GLHook/Timing.Simba}
+{$include_once GLHook/Chat.Simba}
+{$include_once GLHook/Amount.Simba}
+{$include_once GLHook/GameTab.Simba}
+
+{$include_once GLHook/Flag.Simba}
+{$include_once GLHook/Login.Simba}
+{$include_once GLHook/Bank.Simba}

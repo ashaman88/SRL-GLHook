@@ -1,6 +1,6 @@
 Function GLH_GetCompassAngle(Degrees: Boolean): Single;
 var
-  Deg, Rad: Single
+  Deg, Rad: Single;
 Begin
   GLHCompassAngle(Deg, Rad);
   If (Degrees) Then

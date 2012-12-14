@@ -1,0 +1,816 @@
+Function GLH_GetCurrentTab: Integer;
+Var
+  P: TPoint;
+  ItemArray: TPanelArray;
+Begin
+  Result := -1;
+  If (Not GLH_LoggedIn) Then
+    Exit;
+
+  ItemArray := GLHook_GetItemsByMeanID(GLI_GameTab_Selected, GLIM_GameTab_Selected, 5);
+  If (Length(ItemArray) < 1) Then Exit;
+
+  For Result := 0 To (Tab_LogOut - Tab_Combat) - 1 Do
+  Begin
+    P.X := 535 + Result mod 8 * 30;
+    P.Y := (169 + Result div 8 * 298) + 68;
+    If PointInBox(P, IntToBox(ItemArray[0].SX[0], ItemArray[0].SY[0], ItemArray[0].SX[2], ItemArray[0].SY[2])) Then
+      Break;
+  End;
+
+  Result := Result + Tab_Combat;
+  If GLH_BankScreen Then
+    Result := Tab_Inv;
+End;
+
+Function GLH_TabExists(Tab: Integer): Boolean;
+Var
+  P: TPoint;
+  Icons: TPanelArray;
+  LogOutScreen: TPanelArray;
+Begin
+  Result := False;
+  If (Not GLH_LoggedIn) Then
+    Exit;
+
+  If (Not InRange(Tab, Tab_Combat, Tab_LogOut)) Then
+  Begin
+    SRL_Warn('GLH_TabExists', 'Tab ' + toStr(Tab) + ' is not a valid tab number.', Warn_AllVersions);
+    Exit;
+  End;
+
+  If (Tab = TAB_INV) Then
+    If (GLH_BankScreen) Then
+    Begin
+      Result :=  True;
+      Exit;
+    End;
+
+  If (Tab = TAB_LOGOUT) Then
+  Begin
+    LogOutScreen := GLHook_GetItemsByID(GLI_GameTab_ExitTo_Btn);
+    Result := (Length(LogOutScreen) > 0);
+  End;
+
+  Tab := Tab - Tab_Combat;
+  P.X := 535 + Tab mod 8 * 30;
+  P.Y := (169 + Tab div 8 * 298) + 68;
+  Icons:= GLHook_GetItemsByArea(IntToBox(P.X - 7, P.Y - 10, P.X + 10, P.Y + 7));
+  Result := (Length(Icons) >= 2);
+End;
+
+Function GLH_GameTab(Tab: Integer): Boolean;
+var
+  P: TPoint;
+  T, Tries: Integer;
+Begin
+  If (Not GLH_LoggedIn) Then Exit;
+
+  Result := False;
+  If (Not(InRange(Tab, Tab_Combat, Tab_LogOut))) Then
+  Begin
+    SRL_Warn('GLH_GameTab', 'Tab ' + IntToStr(Tab) + ' Is Not A Valid Tab Number.', Warn_AllVersions);
+    Exit;
+  End;
+
+  Result := (GLH_GetCurrentTab = Tab);
+  If (Result) Then Exit;
+
+  If (GLH_TabExists(Tab)) Then
+  Begin
+    P := Point((Tab - Tab_Combat) mod 8 * 30 + RandomRange(527, 545), (Tab - Tab_Combat) div 8 * 298 + RandomRange(177, 197) + 58);
+    If (Tab = Tab_LogOut) Then
+      P := Point(RandomRange(747, 760), RandomRange(3, 18));
+
+    Tries := 0;
+    GLHook_ShowNavBar;
+    While ((Tries < 3) And (Not Result)) Do
+    Begin
+      Mouse(P.X, P.Y, 0, 0, MOUSE_LEFT);
+      T := GetSystemTime;
+
+      While ((Not Result) And (GetSystemTime - T < 2000)) Do
+      begin
+        Result := (GLH_GetCurrentTab = Tab);
+        Wait(100 + Random(100));
+      end;
+
+      Inc(Tries);
+    End;
+    GLHook_HideNavBar;
+
+    If (Result) Then
+      Wait(250 + Random(300));
+  End Else
+    SRL_Warn('GLH_GameTab', 'Tab ' + IntToStr(Tab) + ' Is Not A Valid Tab Number.', warn_Notice);
+End;
+
+Function GLH_GetActiveSpellTab: GLE_Spell_Type;
+var
+  I: Integer;
+  Tab: TPanelArray;
+  ActiveTabIDs: TIntegerArray;
+Begin
+  ActiveTabIDs := [GLI_MagicTab_CombatActive, GLI_MagicTab_RangedActive, GLI_MagicTab_MagicActive, GLI_MagicTab_OtherActive];
+
+  For I := 0 To High(ActiveTabIDs) Do
+  Begin
+    Tab := GLHook_GetItemsByID(ActiveTabIDs[I]);
+    If (Length(Tab) > 0) Then
+    Begin
+      Result := GLE_Spell_Type(I);
+      Exit;
+    End;
+  End;
+  Result := GLE_Spell_None;
+End;
+
+Function GLH_ActiveSpellTab(SpellTab: GLE_Spell_Type): Boolean;
+var
+  Tab: TPanelArray;
+  ActiveTabIDs: TIntegerArray;
+Begin
+  ActiveTabIDs := [GLI_MagicTab_CombatActive, GLI_MagicTab_RangedActive, GLI_MagicTab_MagicActive, GLI_MagicTab_OtherActive];
+  Tab := GLHook_GetItemsByID(ActiveTabIDs[Ord(SpellTab)]);
+  Result := (Length(Tab) > 0);
+End;
+
+Function GLH_SpellTab(SpellTab: GLE_Spell_Type; SpellSubTab: GLE_Spell_SubType): Boolean;
+var
+  Tries, Tab: Integer;
+  TabIDs, SubTabs: TIntegerArray;
+  ActiveTab, Bounds: TPanelArray;
+Begin
+  GLH_GameTab(Tab_Magic);
+  TabIDs := [GLI_Skill_Attack, GLI_Skill_Range, GLI_Skill_Magic, GLI_Skill_Constitution];
+
+  Tab := TabIDs[Ord(SpellTab)];
+  GLHook_ShowNavBar;
+
+  While (Not GLH_ActiveSpellTab(SpellTab)) Do
+  Begin
+    ActiveTab := GLHook_GetItemsByID(Tab);
+    If (Length(ActiveTab) > 0) Then
+      Mouse(ActiveTab[0].X, ActiveTab[0].Y, 5, 5, MOUSE_LEFT);
+
+    If (Tries > 5) Then Exit;
+    Inc(Tries);
+  End;
+
+  Tab := GLI_Spell_Type;
+
+  If (SpellTab = GLE_Spell_MagicTab) Then
+  Begin
+    TabIDs := [GLI_Spell_Type, GLI_MagicSub_CombatSpells, GLI_MagicSub_Transportation, GLI_MagicSub_Skills];
+    Tab := TabIDs[Ord(SpellSubTab) - 3];
+  End;
+
+  SubTabs := [GLIM_CombatSub_Attack, GLIM_CombatSub_Strength, GLIM_RangedSub_Ranged, GLIM_MagicSub_Abilities, GLIM_MagicSub_CombatSpells, GLIM_MagicSub_Transportation, GLIM_MagicSub_Skills, GLIM_OtherSub_Defense, GLIM_OtherSub_Constitution];
+  ActiveTab := GLHook_GetItemsByMeanID(Tab, SubTabs[Ord(SpellSubTab)], 5);
+
+  If (Length(ActiveTab) > 0) Then
+  Begin
+    TabIDs := [GLI_MagicTab_CombatActive, GLI_MagicTab_RangedActive, GLI_MagicTab_MagicActive, GLI_MagicTab_OtherActive];
+    Bounds := GLHook_GetItemsByID(TabIDs[Ord(SpellTab)]);
+    If (Length(Bounds) > 0) Then
+    Begin
+      GLHook_ShowNavBar;
+      For Tries := 0 To High(ActiveTab) Do
+      Begin
+        If PointInBox(Point(ActiveTab[Tries].X, ActiveTab[Tries].Y), IntToBox(Bounds[0].SX[0], Bounds[0].SY[0], Bounds[0].SX[2], Bounds[0].SY[2])) Then
+        Begin
+          Mouse(ActiveTab[Tries].X, ActiveTab[Tries].Y, 5, 5, MOUSE_LEFT);
+          Break;
+        End;
+      End;
+      GLHook_HideNavBar;
+      Result := True;
+      Exit;
+    End;
+  End;
+End;
+
+Function GLH_IsActionBarOpen: Boolean;
+Begin
+  Result := Length(GLHook_GetItemsByMeanID(GLI_ActionBarSlot, GLIM_ActionBarSlot, 5)) > 0;
+End;
+
+Function GLH_ActionBar(Open: Boolean): Boolean;
+var
+  Position: TPoint;
+Begin
+  If (Open) Then
+    Position := Point(508, 383)
+  Else
+    Position := Point(508, 321);
+
+  If (GLH_IsActionBarOpen Xor Open) Then        //XOR is Broken In Lape.. :S
+  Begin
+    GLHook_ShowNavBar;
+    Mouse(Position.X, Position.Y, 1, 1, MOUSE_LEFT);
+    GLHook_HideNavBar;
+    Result := True;
+  End;
+End;
+
+Function GLH_ToggleLockActionBar(Unlock: Boolean): Boolean;
+Begin
+  If (Not GLH_IsActionBarOpen) Then Exit;
+
+  //Todo..
+End;
+
+Function GLH_GetActionBarPageIndex: Integer;
+var
+  Page: TPanelArray;
+  Text: TStringArray;
+  Fonts: TFontArray;
+Begin
+  Result := -1;
+  If (Not GLH_IsActionBarOpen) Then Exit;
+
+  Page := GLHook_GetItemsByMeanID(GLI_ActionBarIndex, GLIM_ActionBarIndex, 5);
+  If (Length(Page) > 0) Then
+  Begin
+    Fonts := GLHook_GetFontsByArea(IntToBox(Page[0].SX[0], Page[0].SY[0], Page[0].SX[2], Page[0].SY[2]));
+    Text := GLHook_FontsToText(Fonts, True, 4, 10);
+    If (Length(Text) > 0) Then
+    Begin
+      Result := StrToIntDef(ExtractFromStr(Text[0], NUMBERS), -1);
+    End;
+  End;
+End;
+
+Function GLH_ActionBarSlotToBox(Index: Integer): TBox;
+Begin
+  Result := IntToBox(46 + ((Index - 1) * 34), 345, 80 + ((Index - 1) * 34), 379);   //Needs modification for better accuracy.
+End;
+
+Function GLH_ActionBarSlotFilled(Index: Integer): Boolean;
+var
+  Bounds: TBox;
+  Panel: TPanelArray;
+Begin
+  If (Not GLH_IsActionBarOpen) Then Exit;
+  Bounds := GLH_ActionBarSlotToBox(Index);
+  Panel := GLHook_GetItemsByArea(Bounds);
+  If (Length(Panel) > 0) Then
+    If (Panel[0].BaseID <> GLI_ActionBarSlot) Then
+      Result := True;
+End;
+
+Function GLH_ActionBarRemoveItem(Index: Integer): Boolean;
+Begin
+  //Todo..
+End;
+
+Function GLH_ClearActionBar: Boolean;
+var
+  TrashCan: TPanelArray;
+Begin
+  Result := False;
+  If (Not GLH_IsActionBarOpen) Then Exit;
+  TrashCan := GLHook_GetItemsByMeanID(GLI_ActionBarTrash, GLIM_ActionBarTrash, 5);
+  If (Length(TrashCan) > 0) Then
+  Begin
+    GLHook_ShowNavBar;
+    Mouse(TrashCan[0].X, TrashCan[0].Y, 3, 3, MOUSE_RIGHT);
+    GLHook_HideNavBar;
+    Result := GLH_WaitOptionMulti(['Clear-all Trashcan'], 600);
+  End;
+End;
+
+Function GLH_IsActionBarEmpty: Boolean;
+var
+  I: Integer;
+  Slots: TPanelArray;
+Begin
+  If (Not GLH_IsActionBarOpen) Then Exit;
+  Slots := GLHook_GetItemsByArea(IntToBox(46, 345, 475, 378));
+  For I := 0 To High(Slots) Do
+    If (Slots[I].BaseID <> GLI_ActionBarSlot) Then
+    Begin
+      Result := False;
+      Exit;
+    End;
+  Result := True;
+End;
+
+Function GLH_SetupXP(Skill: Integer; Style: String): Boolean;
+var
+  Area, Bounds: TBox;
+  I, Styles: Integer;
+  Search: String;
+  Index: TPanelArray;
+  Text: TStringArray;
+  Fonts: TFontArray;
+  CombatTypes: TIntegerArray;
+Begin
+  CombatTypes := [GLI_CombatExperience_Melee, GLI_CombatExperience_Mage, GLI_CombatExperience_Range];
+
+  Case LowerCase(Style) Of
+    'all':                If (Skill = 1) Then
+                            Search := 'Attack, Strength &Defence'
+                          Else If (Skill = 2) Then
+                            Search := 'Magic & Defence'
+                          Else
+                            Search := 'Ranged & Defence';
+
+    'attack':             Search := 'Attack';
+    'strength':           Search := 'Strength';
+    'defence', 'defense': Search := 'Defence';
+    Else
+      Begin Srl_Warn('GLH_SetupXP', 'Invalid Skill Number: ''' + Style + '''', Warn_AllVersions); Exit; End;
+  End;
+
+  Case Skill Of
+    1:          Begin Styles := 3; Bounds := IntToBox(559, 350, 724, 379); End;
+    2, 3:       Begin Styles := 2; Bounds := IntToBox(561, 365, 723, 393); End;
+    Else        Begin Srl_Warn('GLH_SetupXP', 'Invalid Skill Number: ''' + IntToStr(Skill) + '''', Warn_AllVersions); Exit; End;
+  End;
+
+  Index := GLHook_GetItemsByID(CombatTypes[Skill - 1]);
+  If (Length(Index) < 1) Then Exit;
+
+  GLHook_ShowNavBar;
+  Mouse(Index[0].X, Index[0].Y, 10, 10, MOUSE_LEFT);
+  Wait(500);
+  GLHook_HideNavBar;
+
+  For I := 0 To Styles Do
+  Begin
+    Area := IntToBox(Bounds.X1, Bounds.Y1 + (I * 40), Bounds.X2, Bounds.Y2 + (I * 40));
+    Fonts := GLHook_GetFontsByArea(Area);
+    Text := GLHook_FontsToText(Fonts, True, 4, 20);
+    If ((Length(Text) > 0) And (Text[0] = Search)) Then
+    Begin
+      GLHook_ShowNavBar;
+      MouseTBox(Area, MOUSE_LEFT);
+      Mouse(728, 265, 5, 5, MOUSE_LEFT);
+      GLHook_HideNavBar;
+      Result := True;
+      Exit;
+    End;
+  End;
+End;
+
+Function GLH_SetupXPEx(Skill, Style: Integer): Boolean;
+var
+  Bounds: TBox;
+  Styles: Integer;
+  Index: TPanelArray;
+  CombatTypes: TIntegerArray;
+Begin
+  CombatTypes := [GLI_CombatExperience_Melee, GLI_CombatExperience_Mage, GLI_CombatExperience_Range];
+
+  Case Skill Of
+    1:          Begin Styles := 3; Bounds := IntToBox(559, 350, 724, 379); End;
+    2, 3:       Begin Styles := 2; Bounds := IntToBox(561, 365, 723, 393); End;
+    Else        Begin Srl_Warn('GLH_SetupXP', 'Invalid Skill Number: ''' + IntToStr(Skill) + '''', Warn_AllVersions); Exit; End;
+  End;
+
+  If (Not InRange(Style, 0, Styles + 1)) Then
+  Begin
+    Srl_Warn('GLH_SetupXP', 'Invalid Style Number: ''' + IntToStr(Style) + '''', Warn_AllVersions);
+    Exit;
+  End;
+
+  Index := GLHook_GetItemsByID(CombatTypes[Skill - 1]);
+  If (Length(Index) < 1) Then Exit;
+  GLHook_ShowNavBar;
+  Mouse(Index[0].X, Index[0].Y, 10, 10, MOUSE_LEFT);
+  Wait(500);
+  Bounds := IntToBox(Bounds.X1, Bounds.Y1 + (Style * 40), Bounds.X2, Bounds.Y2 + (Style * 40));
+  MouseTBox(Bounds, MOUSE_LEFT);
+  Mouse(728, 265, 5, 5, MOUSE_LEFT);
+  GLHook_HideNavBar;
+  Result := True;
+End;
+
+Function GLH_IsRetaliating: Boolean;
+var
+  Text: TStringArray;
+  Button: TPanelArray;
+  Fonts: TFontArray;
+Begin
+  Button := GLHook_GetItemsByID(GLI_AutoRetaliate);
+  If (Length(Button) < 1) Then Exit;
+
+  Fonts := GLHook_GetFontsByArea(IntToBox(Button[0].SX[0], Button[0].SY[0], Button[0].SX[2], Button[0].SY[2]));
+  Text := GLHook_FontsToText(Fonts, True, 4, 10);
+  If (Length(Text) > 0) Then
+    Result := (Text[0] = 'Retaliate (On)');
+End;
+
+Procedure GLH_Retaliate(TurnOn: Boolean);
+Var
+  Button: TPanelArray;
+Begin
+  Button := GLHook_GetItemsByID(GLI_AutoRetaliate);
+  If (Length(Button) < 1) Then Exit;
+
+  GLHook_ShowNavBar;
+  If (TurnOn xor GLH_IsRetaliating) Then
+    MouseBox(Button[0].SX[0], Button[0].SY[0], Button[0].SX[2], Button[0].SY[2], MOUSE_LEFT);
+  GLHook_HideNavBar;
+End;
+
+Function GLH_SkillCoords(Row, Column : ShortInt): TPoint;
+Begin
+  Result := Point(576 + (62 * (Column - 1)), 263 + (28 * (Row - 1)));
+End;
+
+Function GLH_SkillToCoords(Skill: Integer): TPoint;
+var
+  SkillPT : TPoint;
+Begin
+  If (Not GLH_LoggedIn) Then Exit;
+
+  Case Skill Of
+    Skill_Attack        : SkillPT := Point(1,1);
+    Skill_Strength      : SkillPT := Point(1,2);
+    Skill_Defence       : SkillPT := Point(1,3);
+    Skill_Range         : SkillPT := Point(1,4);
+    Skill_Prayer        : SkillPT := Point(1,5);
+    Skill_Magic         : SkillPT := Point(1,6);
+    Skill_RuneCrafting  : SkillPT := Point(1,7);
+    Skill_Construction  : SkillPT := Point(1,8);
+    Skill_Dungeoneering : SkillPT := Point(1,9);
+    Skill_Hitpoints     : SkillPT := Point(2,1);
+    Skill_Agility       : SkillPT := Point(2,2);
+    Skill_Herblore      : SkillPT := Point(2,3);
+    Skill_Thieving      : SkillPT := Point(2,4);
+    Skill_Crafting      : SkillPT := Point(2,5);
+    Skill_Fletching     : SkillPT := Point(2,6);
+    Skill_Slayer        : SkillPT := Point(2,7);
+    Skill_Hunter        : SkillPT := Point(2,8);
+    Skill_Mining        : SkillPT := Point(3,1);
+    Skill_Smithing      : SkillPT := Point(3,2);
+    Skill_Fishing       : SkillPT := Point(3,3);
+    Skill_Cooking       : SkillPT := Point(3,4);
+    Skill_FireMaking    : SkillPT := Point(3,5);
+    Skill_WoodCutting   : SkillPT := Point(3,6);
+    Skill_Farming       : SkillPT := Point(3,7);
+    Skill_Summoning     : SkillPT := Point(3,8);
+  Else
+    Begin
+      Srl_Warn('GLH_SkillToCoords', 'Invalid Skill Number: ''' + IntToStr(Skill) + '''', Warn_AllVersions);
+      Exit;
+    End;
+  End;
+
+  Result := GLH_SkillCoords(SkillPT.Y, SkillPT.X);
+end;
+
+Function GLH_GetSkillInfo(Skill: Integer; Amount : Boolean): Integer;
+var
+  P: TPoint;
+  Fonts: TFontArray;
+  Text: TStringArray;
+Begin
+  Result := -1;
+  If (GLH_GameTab(Tab_Stats)) Then
+  Begin
+    P := GLH_SkillToCoords(Skill);
+    If (Not(Amount)) Then
+        P := Point(P.X + 15, P.Y + 12);
+
+    Fonts := GLHook_GetFontsByArea(IntToBox(P.X - 2, P.Y - 2, P.X + 15, P.Y + 15));
+    Text := GLHook_FontsToText(Fonts, True, 0, 5);
+    If (Length(Text) < 1) Then
+    Begin
+      Result := -1;
+      Exit;
+    End;
+    Result := StrToIntDef(ExtractFromStr(Text[0], NUMBERS), -1);
+  End;
+End;
+
+Function GLH_GetSkillLevel(Skill: Integer): Integer;
+Begin
+  Result := GLH_GetSkillInfo(Skill, False);
+End;
+
+Function GLH_IsResting: Boolean;
+Begin
+  Result := (Length(GLHook_GetItemsByMeanID(GLI_MMPanel_Resting, GLIM_MMPanel_Resting, 5)) > 0);
+End;
+
+Function GLH_GetMMLevels(Which: GLE_MMLevel; var Colour: String): Integer;
+var
+  B: TBox;
+  I: Integer;
+  Fonts: TFontArray;
+  Texts: TStringArray;
+  Colours: TIntegerArray;
+  ColoursList: TStringArray;
+Begin
+  Result := -1;
+  Colour := '';
+
+  Case Which Of
+    GLE_MMLevel_Health:       B := IntToBox(719, 77, 745, 93);
+    GLE_MMLevel_Prayer:       B := IntToBox(735, 116, 762, 132);
+    GLE_MMLevel_RunEnergy:    B := IntToBox(735, 153, 762, 172);
+    GLE_MMLevel_Summoning:    B := IntToBox(719, 169, 745, 206);
+  End;
+
+  Colours := [65280, 65535, 2070783, 255];
+  ColoursList := ['Green', 'Yellow', 'Orange', 'Red'];
+
+  Fonts := GLHook_GetFontsByArea(B);
+  If (Length(Fonts) < 1) Then Exit;
+
+  For I := 0 To High(Colours) Do
+    If SimilarColors(Fonts[0].Colour, Colours[I], 5) Then
+      Colour := ColoursList[I];
+
+  Texts := GLHook_FontsToText(Fonts, True, 0, 5);
+  If (Length(Texts) > 0) Then
+    Result := StrToIntDef(ExtractFromStr(Texts[0], NUMBERS), -1);
+End;
+
+Function GLH_GetCombatLevel: Integer;
+var
+  Defence: Integer;
+  Skills: TIntegerArray;
+Begin
+  Defence := GLH_GetSkillLevel(Skill_Defence);
+  Skills := [GLH_GetSkillLevel(Skill_Attack), GLH_GetSkillLevel(Skill_Strength), Defence, GLH_GetSkillLevel(Skill_Magic) ,GLH_GetSkillLevel(Skill_Range)];
+  Result := MaxA(Skills) + Defence + 2;
+End;
+
+Function GLH_HPPercent: Integer;
+var
+  ColourString: string;
+Begin
+  If (Players[CurrentPlayer].Level[SKILL_HITPOINTS] < 1) Then
+    Players[CurrentPlayer].Level[SKILL_HITPOINTS] := Max(1, GLH_GetSkillInfo(SKILL_HITPOINTS, False));
+
+  if (Players[CurrentPlayer].Level[SKILL_HITPOINTS] > 1) then
+    Result := GLH_GetMMLevels(GLE_MMLevel_Health, ColourString) * 10 / Players[CurrentPlayer].Level[SKILL_HITPOINTS]
+  else
+    Result := -1;
+End;
+
+Function GLH_EquipmentCoords(EquipmentSlot: GLE_Equipment): TPoint;
+Begin
+  Case EquipmentSlot Of
+    GLE_Equipment_Aura:    Result := Point(600, 275);
+    GLE_Equipment_Head:    Result := Point(640, 275);
+    GLE_Equipment_Cloak:   Result := Point(600, 266);
+    GLE_Equipment_Neck:    Result := Point(640, 316);
+    GLE_Equipment_Quiver:  Result := Point(684, 316);
+    GLE_Equipment_RHand:   Result := Point(588, 354);
+    GLE_Equipment_Torso:   Result := Point(644, 354);
+    GLE_Equipment_LHand:   Result := Point(700, 354);
+    GLE_Equipment_Legs:    Result := Point(642, 393);
+    GLE_Equipment_Gloves:  Result := Point(588, 434);
+    GLE_Equipment_Boots:   Result := Point(643, 434);
+    GLE_Equipment_Ring:    Result := Point(700, 434);
+  Else
+    Begin
+      Result := Point(-1,-1);
+	    Srl_Warn('GLH_EquipmentCoords','Invalid EquipSlot(' + ToStr(EquipmentSlot) + ') Passed', Warn_AllVersions);
+    End;
+  End;
+End;
+
+Function GLH_GetEquippedItemBounds(Which: GLE_Equipment): TBox;
+var
+  P: TPoint;
+  A, R: GLE_Equipment;
+Begin
+  A := GLE_Equipment_Aura;
+  R := GLE_Equipment_Ring;
+
+  If (Not InRange(Ord(Which), Ord(A), Ord(R))) Then
+  Begin
+    Result := IntToBox(-1, -1, -1, -1);
+	  Srl_Warn('GLH_GetEquipedItemBounds', 'Invalid EquipSlot(' + ToStr(Which) + ') Passed', Warn_AllVersions);
+    Exit;
+  End;
+
+  P := GLH_EquipmentCoords(Which);
+  Result := IntToBox(P.X - 11, P.Y - 11, P.X + 11, P.Y + 11);
+End;
+
+Function GLH_ItemEquipped(Which: GLE_Equipment): Boolean;
+var
+  A, R: GLE_Equipment;
+Begin
+  Result := False;
+  A := GLE_Equipment_Aura;
+  R := GLE_Equipment_Ring;
+
+  If (Not InRange(Ord(Which), Ord(A), Ord(R))) Then
+  Begin
+	  Srl_Warn('GLH_ItemEquipped', 'Invalid EquipSlot(' + ToStr(Which) + ') Passed', Warn_AllVersions);
+    Exit;
+  End;
+
+  Case Which Of
+    GLE_Equipment_Aura:    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Aura, GLIM_Equipment_Aura, 5)) < 1);
+    GLE_Equipment_Head:    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Head, GLIM_Equipment_Head, 5)) < 1);
+    GLE_Equipment_Cloak:   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Cloak, GLIM_Equipment_Cloak, 5)) < 1);
+    GLE_Equipment_Neck:    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Neck, GLIM_Equipment_Neck, 5)) < 1);
+    GLE_Equipment_Quiver:  Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Quiver, GLIM_Equipment_Quiver, 5)) < 1);
+    GLE_Equipment_RHand:   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_RHand, GLIM_Equipment_RHand, 5)) < 1);
+    GLE_Equipment_Torso:   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Torso, GLIM_Equipment_Torso, 5)) < 1);
+    GLE_Equipment_LHand:   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_LHand, GLIM_Equipment_LHand, 5)) < 1);
+    GLE_Equipment_Legs:    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Legs, GLIM_Equipment_Legs, 5)) < 1);
+    GLE_Equipment_Gloves:  Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Gloves, GLIM_Equipment_Gloves, 5)) < 1);
+    GLE_Equipment_Boots:   Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Boots, GLIM_Equipment_Boots, 5)) < 1);
+    GLE_Equipment_Ring:    Result := (Length(GLHook_GetItemsByMeanID(GLI_Equipment_Ring, GLIM_Equipment_Ring, 5)) < 1);
+  End;
+End;
+
+Procedure GLH_TakeOff(Which: GLE_Equipment);
+var
+  P: TPoint;
+Begin
+  P := GLH_EquipmentCoords(Which);
+  If GLH_ItemEquipped(Which) Then
+  Begin
+    GLHook_ShowNavBar;
+    Mouse(P.X, P.Y, 5, 5, MOUSE_LEFT);
+    GLHook_HideNavBar;
+    Wait(200 + Random(350));
+  End;
+End;
+
+Procedure GLH_TakeOffAllExcept(Exceptions: GLE_Equipment_Array);
+var
+  A, R: GLE_Equipment;
+  I: Integer;
+Begin
+  A := GLE_Equipment_Aura;
+  R := GLE_Equipment_Ring;
+
+  For I := Ord(A) To Ord(R) Do
+    If (Not InArray(Exceptions, GLE_Equipment(I))) Then
+      GLH_TakeOff(GLE_Equipment(I));
+End;
+
+Procedure GLH_TakeOffAllItems;
+Begin
+  GLH_TakeOffAllExcept([]);
+End;
+
+Function GLH_CountEquippedItems: Integer;
+var
+  I: Integer;
+  A, R: GLE_Equipment;
+Begin
+  A := GLE_Equipment_Aura;
+  R := GLE_Equipment_Ring;
+
+  Result := Ord(GLH_GameTab(Tab_Equip)) - 2;
+  If (Result = -1) Then Exit;
+
+  For I := Ord(A) to Ord(R) Do
+    If GLH_ItemEquipped(GLE_Equipment(I)) Then
+      Inc(Result);
+End;
+
+Function GLH_CurrentWorld: Integer;
+Var
+  Fonts: TFontArray;
+  Text: TStringArray;
+Begin
+  Result := -1;
+  If (GLH_GetCurrentTab <> Tab_Friends) Then
+  Begin
+    GLH_GameTab(Tab_Friends);
+    Wait(250 + Random(500));
+  End;
+
+  Fonts := GLHook_GetFontsByArea(IntToBox(601, 273, 703, 288));
+  Text := GLHook_FontsToText(Fonts, True, 4, 10);
+  If (Length(Text) > 0) Then
+    Result := StrToIntDef(ExtractFromStr(Text[0], NUMBERS), -1);
+End;
+
+Function GLH_SetRun(Run: Boolean): Boolean;
+var
+  RunIcon: TPanelArray;
+Begin
+  RunIcon := GLHook_GetItemsByMeanID(GLI_MMPanel_RunEnergy, GLIM_MMPanel_RunOn, 5);
+  If ((Length(RunIcon) > 0) Xor Run) Then
+  Begin
+    GLHook_ShowNavBar;
+    Mouse(RunIcon[0].X, RunIcon[0].Y, 10, 10, MOUSE_LEFT);
+    GLHook_HideNavBar;
+    Result := True;
+  End;
+End;
+
+Function GLH_RestAt(Min: Integer): Boolean;
+var
+  T: Integer;
+  Level: Integer;
+  Colour: String;
+Begin
+  T := GetSystemTime + 5000;
+  Repeat
+    Level := GLH_GetMMLevels(GLE_MMLevel_RunEnergy, Colour);
+    Result := (Level >= Min);
+    If (Result) Then
+    Begin
+      GLH_SetRun(True);
+      Exit;
+    End;
+    If (Level > 0) Then
+      Exit;
+  Until(T > GetSystemTime);
+End;
+
+Function GLH_SetRest: Boolean;
+var
+  RunIcon: TPanelArray;
+Begin
+  Result := False;
+  If (Not GLH_IsResting) Then
+  Begin
+    RunIcon := GLHook_GetItemsByID(GLI_MMPanel_RunEnergy);
+    If (Length(RunIcon) > 0) Then
+    Begin
+      GLHook_ShowNavBar;
+      Mouse(RunIcon[0].X, RunIcon[0].Y, 10, 10, MOUSE_RIGHT);
+      GLHook_HideNavBar;
+    End;
+
+    If GLH_WaitOption('Rest', 300) Then
+      Result := WaitFunc(@GLH_IsResting, 100, 5000);
+  End;
+End;
+
+Function GLH_RestUntil(Energy: Integer): Boolean;
+var
+  Colour: String;
+Begin
+  Result := (GLH_GetMMLevels(GLE_MMLevel_RunEnergy, Colour) >= Energy);
+  If (Result) Then Exit;
+  GLH_SetRest;
+  While (GLH_GetMMLevels(GLE_MMLevel_RunEnergy, Colour) < Energy) Do
+  Begin
+    Result := GLH_IsResting;
+    If (Not Result) Then Exit;
+    If SRL_HasProc(srl_AntiBan) Then
+      SRL_Procs[srl_AntiBan]();
+    Wait(100 + Random(50));
+  End;
+End;
+
+Function GLH_RestUntilHP(HPPercentage: Integer): Boolean;
+begin
+  Result := (GLH_HPPercent >= HPPercentage);
+  If (Result) Then Exit;
+  SetRest;
+  While (GLH_HPPercent < HPPercentage) Do
+  Begin
+    Result := GLH_IsResting;
+    If (Not Result) Then Exit;
+    If SRL_HasProc(srl_AntiBan) Then
+      SRL_Procs[srl_AntiBan]();
+    Wait(100 + Random(50));
+  End;
+End;
+
+Function GLH_GetLobbyTab: Integer;
+var
+  LobbyTabs: TPanelArray;
+Begin
+  LobbyTabs := GLHook_GetItemsByID(GLI_LobbyTab);
+  For Result := 1 to 6 Do
+    If (LobbyTabs[Result - 1].MeanID = GLIM_LobbyTab_Active) then
+      Exit;
+  Result := -1;
+End;
+
+
+Function GLH_LobbyTab(Tab: Integer): Boolean;
+var
+  TabPanel: TPanelArray;
+  TabArray: TIntegerArray;
+Begin
+  Result := False;
+  If (Not InRange(Tab, L_PlayerInfo, L_Options)) Then
+  Begin
+    Srl_Warn('GLH_LobbyTab', 'Tab ' + IntToStr(Tab) + ' Is Not Valid.', Warn_AllVersions);
+    Exit;
+  End;
+
+  Result := GLH_GetLobbyTab = Tab;
+  If Result Then Exit;
+
+  TabArray := [GLIM_Lobby_WorldList, GLIM_Lobby_PlayerInfo, GLIM_Lobby_FriendsList, GLIM_Lobby_FriendChat, GLIM_Lobby_ClanChat, GLIM_Lobby_Options];
+  TabPanel := GLHook_GetItemsByMeanID(GLI_LobbyTab_Icon, TabArray[Tab - 1], 5);
+  If (Length(TabPanel) > 0) Then
+  Begin
+    GLHook_ShowNavBar;
+    Mouse(TabPanel[0].X, TabPanel[0].Y, 10, 6, MOUSE_LEFT);
+    GLHook_HideNavBar;
+    Result := True;
+  End;
+End;
