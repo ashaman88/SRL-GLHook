@@ -1,0 +1,216 @@
+{* Still a work in progress. This file will make text-recognition 100% flawless as it was before.
+   It will not error out or throw any errors or go out of range, It's compatible with PASCAL-SCRIPT and LAPE.
+   It is 10x faster than the current include's font recognition. This removes shadows automatically which speeds up everything.
+   Shadow Removal makes font finding a singe. Very easy, accurate, customizeable, optional, etc..
+   This file will also have functions to get the colours of fonts with 100% accuracy and the best possible speed.
+   This file should need the least amount of updates in the future if any at all!
+
+    This File May NOT be Copied, Modified OR Translated for any purposes other than updating the SRL-GLHook Library.
+
+      By: Brandon-T.
+ *}
+
+{$I GLHook/GLHook.Simba}
+
+Function RemoveFontShadows(Fonts: TFontArray): TFontArray;  //Reminder: Do on C++ side for maximum speed! Still extremely fast in PS though.
+var
+  I, J, L: Integer;
+Begin
+  L := Length(Fonts);
+  If (L < 1) Then Exit;
+
+  If ((L < 2) or (L mod 2 <> 0)) Then
+  Begin
+    Result := Fonts;
+    Exit;
+  End;
+
+  SetLength(Result, L / 2);
+  For I := 0 To L - 2 Do
+  Begin
+    If (Fonts[I].X - Fonts[I + 1].X = 1) Then
+      Result[J] := Fonts[I + 1];
+
+    Inc(I); Inc(J);
+  End;
+End;
+
+Function FontsToColourTextEx(var Fonts: TFontArray; Shadow: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): TTextInfoArray; //Useless? Not sure why I made this but I needed it for something :S
+var
+  I, J, L: Integer;
+  X, Y: Integer;
+  IX, IY: Integer;
+  Text: String;
+  StoreColour: Boolean;
+Begin
+  If (Shadow) Then
+    Fonts := RemoveFontShadows(Fonts);
+
+  L := High(Fonts);
+  If (L < 1) Then Exit;
+  StoreColour := True;
+
+  For I := 0 To L Do
+  Begin
+    If (L > 1) And (I + 1 <= L) Then
+    Begin
+      X := Round(Fonts[I + 1].X - (Fonts[I].X + Fonts[I].VX[2]));
+      Y := Round(Fonts[I + 1].Y - Fonts[I].Y);
+    End Else
+      Begin
+        X := Round(-Fonts[I].X);
+        Y := Round(Fonts[I].Y);
+      End;
+
+    Text := Text + Fonts[I].Symbol;
+
+    If (X >= MinHSpacing) Then
+      Text := Text + ' ';
+
+    If (StoreColour) Then
+    Begin
+      IX := Round(Fonts[I].X);
+      IY := Round(Y - Fonts[I].VY[2]);
+      StoreColour := False;
+    End;
+
+    If (iAbs(Y) >= MinVSpacing) Then
+    Begin
+      SetLength(Result, Length(Result) + 1);
+      Result[J].Text := Text;
+      Result[J].Area.X1 := IX;
+      Result[J].Area.Y1 := IY;
+      Result[J].Area.X2 := X;
+      Result[J].Area.Y2 := Y;
+      Result[J].Colour := Fonts[I].Colour;
+      Inc(J);
+      Text := '';
+      StoreColour := True;
+    End;
+  End;
+End;
+
+Function FontsToColourText(var Fonts: TFontArray; Shadow: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): TTextInfoArray;
+var
+  I, J, L: Integer;
+  X, Y: Integer;
+  X2, Y2: Integer;
+  IX, IY: Integer;
+  Colour: Integer;
+  Text: String;
+  StoreColour: Boolean;
+Begin
+  If (Shadow) Then
+    Fonts := RemoveFontShadows(Fonts);
+
+  L := High(Fonts);
+  If (L < 1) Then Exit;
+  StoreColour := True;
+
+  For I := 0 To L Do
+  Begin
+    If (Not InRange(Ord(Fonts[I].Symbol), 32, 127)) Then
+    Begin
+      Text := Text + ' ';
+      Continue;
+    End;
+
+    If (L > 1) And (I + 1 <= L) Then
+    Begin
+      X := Round(Fonts[I + 1].X - (Fonts[I].X + Fonts[I].VX[2]));
+      Y := Round(Fonts[I + 1].Y - Fonts[I].Y);
+    End Else
+      Begin
+        X := Round(-Fonts[I].X);
+        Y := Round(Fonts[I].Y);
+      End;
+
+    Text := Text + Fonts[I].Symbol;
+
+    If (X >= MinHSpacing) Then
+      Text := Text + ' ';
+
+    If (StoreColour) Then
+    Begin
+      Colour := Fonts[I].Colour;
+      IX := Round(Fonts[I].X);
+      IY := Round(Y - Fonts[I].VY[2]);
+      StoreColour := False;
+    End;
+
+    If ((iAbs(Y) >= MinVSpacing) Or ((I + 1 <= L) And (Fonts[I + 1].Colour <> Colour))) Then
+    Begin
+      SetLength(Result, Length(Result) + 1);
+      Result[J].Text := Text;
+      Result[J].Area.X1 := IX;
+      Result[J].Area.Y1 := IY;
+      Result[J].Area.X2 := X;
+      Result[J].Area.Y2 := Y;
+      Result[J].Colour := Fonts[I].Colour;
+      Inc(J);
+      Text := '';
+      StoreColour := True;
+    End;
+  End;
+End;
+
+Function FontsToText(var Fonts: TFontArray; Shadow: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): TStringArray;
+var
+  I, L: Integer;
+  X, Y: Integer;
+  Text: String;
+Begin
+  If (Shadow) Then
+    Fonts := RemoveFontShadows(Fonts);
+
+  L := High(Fonts);
+  If (L < 1) Then Exit;
+
+  For I := 0 To L Do
+  Begin
+    If (Not InRange(Ord(Fonts[I].Symbol), 32, 126)) Then
+    Begin
+      Text := Text + ' ';
+      Continue;
+    End;
+
+    If (L > 1) And (I + 1 <= L) Then
+    Begin
+      X := Round(Fonts[I + 1].X - (Fonts[I].X + Fonts[I].VX[2]));
+      Y := Round(Fonts[I + 1].Y - Fonts[I].Y);
+    End Else
+      Begin
+        X := Round(-Fonts[I].X);
+        Y := Round(Fonts[I].Y);
+      End;
+
+    Text := Text + Fonts[I].Symbol;
+
+    If (X >= MinHSpacing) Then
+      Text := Text + ' ';
+
+    If (iAbs(Y) >= MinVSpacing) Then
+      Text := Text + '\n\r';
+  End;
+
+  ExplodeWrap('\n\r', Text, Result);
+  For I := 0 To High(Result) Do
+    Result[I] := Trim(Result[I]);
+End;
+
+var
+  I: Integer;
+  Fonts: TFontArray;
+  F: TTextInfoArray;
+begin
+  SetupSRL;
+  if (Not GLHSetup('2268')) then
+  begin
+    Writeln('Failed To Setup GLHook');
+    TerminateScript;
+  end;
+  ClearDebug;
+
+  Fonts := GLHook_GetFontsByArea(IntToBox(7, 395, 512, 507));
+  writeln(FontsToText(Fonts, False, 3, 14));
+end.
