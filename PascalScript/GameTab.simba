@@ -195,6 +195,13 @@ Begin
   Result := Length(GLHook_GetItemsByMeanID(GLI_ActionBarOpen, GLIM_ActionBarOpen, 5)) > 0;
 End;
 
+Function GLH_IsActionBarLocked: Boolean;
+var
+  X, Y: Integer;
+Begin
+  Result := Not FindColorTolerance(X, Y, 1252140, 19, 345, 19, 345, 20);
+End;
+
 Function GLH_ToggleActionBar(Open: Boolean): Boolean;
 var
   Position: TPoint;
@@ -204,7 +211,7 @@ Begin
   Else
     Position := Point(508, 321);
 
-  If (GLH_IsActionBarOpen Xor Open) Then        //XOR is Broken In Lape.. :S
+  If (GLH_IsActionBarOpen Xor Open) Then
   Begin
     GLHook_ShowNavBar;
     Mouse(Position.X, Position.Y, 1, 1, MOUSE_LEFT);
@@ -217,7 +224,13 @@ Function GLH_ToggleLockActionBar(Unlock: Boolean): Boolean;
 Begin
   If (Not GLH_IsActionBarOpen) Then Exit;
 
-  //Todo..
+  If (Unlock xor (Not GLH_IsActionBarLocked)) Then
+  Begin
+    GLHook_ShowNavBar;
+    Mouse(19, 345, 5, 5, MOUSE_LEFT);
+    GLHook_HideNavBar;
+    Result := True;
+  End;
 End;
 
 Function GLH_GetActionBarPageIndex: Integer;
@@ -272,9 +285,40 @@ Begin
       Result := True;
 End;
 
-Function GLH_ActionBarRemoveItem(Index: Integer): Boolean;
+Function GLH_RemoveItemActionBar(Index: Integer): Boolean;
+var
+  TP: TPoint;
+  Button: TPanelArray;
+  ActionBarState: Boolean;
 Begin
-  //Todo..
+  If (Not InRange(Index, 1, 12)) Then Exit;
+  If (Not GLH_ActionBarSlotFilled(Index)) Then
+  Begin
+    Result := True;
+    Exit;
+  End;
+
+  Button := GLHook_GetItemsByMeanID(GLI_ActionBarTrash, GLIM_ActionBarTrash, 5);
+  If (Length(Button) < 1) Then Exit;
+
+  ActionBarState := GLH_IsActionBarLocked;
+
+  If (ActionBarState) Then
+  Begin
+    GLH_ToggleLockActionBar(True);
+    Wait(RandomRange(500, 600));
+  End;
+
+  TP := MiddleBox(GLH_ActionBarSlotToBox(Index));
+
+  GLHook_ShowNavBar;
+  DragMouse(TP.X, TP.Y, 7, 7, Button[0].X, Button[0].Y, 5, 5);
+  GLHook_HideNavBar;
+  Wait(RandomRange(500, 600));
+
+  If (ActionBarState) Then GLH_ToggleLockActionBar(False);
+
+  Result := Not GLH_ActionBarSlotFilled(Index);
 End;
 
 Function GLH_ClearActionBar: Boolean;
@@ -548,7 +592,7 @@ var
   Text: TStringArray;
   Fonts: TFontArray;
 Begin
-  If (GLH_GameTab(Tab_Combat))
+  If (GLH_GameTab(Tab_Combat)) Then
   Begin
     Fonts := GLHook_GetFontsByArea(IntToBox(550, 366, 597, 384));
     Text := GLHook_FontsToText(Fonts, True, 3, 10);
@@ -564,7 +608,7 @@ Function GLH_HasTarget: Boolean;
 var
   TP: TPoint;
 Begin
-  If (GLH_GameTab(Tab_Combat))
+  If (GLH_GameTab(Tab_Combat)) Then
     Result := (Not GLHook_FindTextArea(TP, IntToBox(593, 267, 674, 281), 'No Target', True, 3, 14));
 End;
 
