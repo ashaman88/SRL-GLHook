@@ -40,6 +40,11 @@ Begin
   Result := ExecRegExpr('.*' + Text + '.*', GLH_GetUpText);
 End;
 
+Function GLH_IsUpTextRe(RegEx: String): Boolean;
+Begin
+  Result := ExecRegExpr(RegEx, GLH_GetUpText);
+End;
+
 Function GLH_IsUpText(Text: String): Boolean;
 Begin
   Result := (Pos(Text, GLH_GetUpText) > 0);
@@ -65,6 +70,58 @@ Begin
   MMouse(X, Y, 5, 5);
   Wait(RandomRange(80, 150));
   Result := StrToIntDef(Between('l: ', ')', GLH_GetUpText), -1);
+End;
+
+Function GLH_FindNPCChatTextMulti(Texts: TStringArray; Action: fnct_ActionOptions): Boolean;
+var
+  TP: TPoint;
+  H, I, J, L: Integer;
+  Info: TTextInfoArray;
+  Options: TPanelArray;
+Begin
+  Info := GLHook_FontsToTextEx(GLHook_GetFontsByArea(IntToBox(72, 427, 447, 518)), False, 4, 10);
+  If (Length(Info) < 1) Then Exit;
+
+  Options := GLHook_GetItemsByID(GLI_NPC_Chat_Options);
+  If (Length(Options) < 1) Then Exit;
+
+  H := High(Options);
+  For I := 0 To H Do
+  Begin
+    Info[J].Area.X1 := Options[I].SX[0];
+    Info[J].Area.Y1 := Options[I].SY[0];
+    Inc(I);
+
+    Info[J].Area.X2 := Options[I].SX[2];
+    Info[J].Area.Y2 := Options[I].SY[2];
+    Inc(J);
+  End;
+
+  H := High(Info);
+  L := High(Texts);
+  TP := Point(-1, -1);
+
+  For I := 0 To L Do
+    For J := 0 To H Do
+      If (Pos(Texts[I], Info[J].Text) > 0) Then
+        TP := MiddleBox(Info[J].Area);
+
+  If (TP <> Point(-1, -1)) Then
+  Begin
+    GLHook_ShowNavBar;
+    Case Action Of
+      Move: MMouse(TP.X, TP.Y, 6, 3);
+      ClickLeft: Mouse(TP.X, TP.Y, 6, 3, MOUSE_LEFT);
+      ClickRight: Mouse(TP.X, TP.Y, 6, 3, MOUSE_RIGHT);
+    End;
+    GLHook_HideNavBar;
+    Result := True;
+  End;
+End;
+
+Function GLH_FindNPCChatText(Text: String; Action: fnct_ActionOptions): Boolean;
+Begin
+  Result := GLH_FindNPCChatTextMulti([Text], Action);
 End;
 
 Function GLH_GetChooseOptions(var MenuBounds: TBox): TTextInfoArray;

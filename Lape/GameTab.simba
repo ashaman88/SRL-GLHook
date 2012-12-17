@@ -192,10 +192,10 @@ End;
 
 Function GLH_IsActionBarOpen: Boolean;
 Begin
-  Result := Length(GLHook_GetItemsByMeanID(GLI_ActionBarSlot, GLIM_ActionBarSlot, 5)) > 0;
+  Result := Length(GLHook_GetItemsByMeanID(GLI_ActionBarOpen, GLIM_ActionBarOpen, 5)) > 0;
 End;
 
-Function GLH_ActionBar(Open: Boolean): Boolean;
+Function GLH_ToggleActionBar(Open: Boolean): Boolean;
 var
   Position: TPoint;
 Begin
@@ -241,7 +241,20 @@ End;
 
 Function GLH_ActionBarSlotToBox(Index: Integer): TBox;
 Begin
-  Result := IntToBox(46 + ((Index - 1) * 34), 345, 80 + ((Index - 1) * 34), 379);   //Needs modification for better accuracy.
+  If InRange(Index, 1, 12) Then
+  begin
+    Dec(Index);
+    With Result Do
+    Begin
+      X1 := 47 + Index * 7 + Index * 29;
+      X2 := Result.X1 + 29;
+      Y1 := 348;
+      Y2 := 375;
+      Exit;
+    End;
+  End;
+
+  Result := IntToBox(-1, -1, -1, -1);
 End;
 
 Function GLH_ActionBarSlotFilled(Index: Integer): Boolean;
@@ -524,12 +537,39 @@ End;
 
 Function GLH_GetCombatLevel: Integer;
 var
-  Defence: Integer;
-  Skills: TIntegerArray;
+  Text: TStringArray;
 Begin
-  Defence := GLH_GetSkillLevel(Skill_Defence);
-  Skills := [GLH_GetSkillLevel(Skill_Attack), GLH_GetSkillLevel(Skill_Strength), Defence, GLH_GetSkillLevel(Skill_Magic) ,GLH_GetSkillLevel(Skill_Range)];
-  Result := MaxA(Skills) + Defence + 2;
+  If (GLH_GameTab(Tab_Combat))
+  Begin
+    Text := GLHook_FontsToText(GLHook_GetFontsByArea(IntToBox(550, 366, 597, 384)), True, 3, 10);
+    If (Length(Text) > 0) Then
+      Result := StrToIntDef(Text[0], -1);
+    Exit;
+  End;
+
+  Result := -1;
+End;
+
+Function GLH_HasTarget: Boolean;
+var
+  TP: TPoint;
+Begin
+  If (GLH_GameTab(Tab_Combat))
+    Result := (Not GLHook_FindTextArea(TP, IntToBox(593, 267, 674, 281), 'No Target', True, 3, 14));
+End;
+
+Function GLH_GetTargetCombatLevel: Integer;
+var
+  Text: TStringArray;
+Begin
+  If GLH_HasTarget Then
+  Begin
+    Text := GLHook_FontsToText(GLHook_GetFontsByArea(IntToBox(687, 258, 737, 274)), True, 3, 14);
+    If (Length(Text) > 0) Then
+      Result := StrToIntDef(Text[0], -1);
+    Exit;
+  End;
+  Result := -1;
 End;
 
 Function GLH_HPPercent: Integer;

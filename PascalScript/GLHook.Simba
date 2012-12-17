@@ -1,12 +1,12 @@
 {$Define GLHook}
 {$include_once SRL/SRL.Simba}
 
-Procedure GLHook_HideNavBar;
+Procedure GLHook_HideNavBar;  //Allows exact MouseMovement in the OpenGL world. Forcefully remove the Mouse offset.
 Begin
   SRL_DisableNavBar;          //Comment out to enable normal mouse movement. For testing..
 End;
 
-Procedure GLHook_ShowNavBar;
+Procedure GLHook_ShowNavBar;  //Resets the Navigation bar. Forcefully enable it and add the Mouse offset.
 Begin
   SRL_EnableNavBar;
 End;
@@ -22,3 +22,13 @@ End;
 {$include_once GLHook/Flag.Simba}
 {$include_once GLHook/Login.Simba}
 {$include_once GLHook/Bank.Simba}
+
+Function GLHook_Setup(ProcessID: String): Boolean;
+Begin
+  GLC_MSBox := IntToBox(MSX1 + SRL_NAVBAR_INGAME_X, MSY1 + SRL_NAVBAR_INGAME_Y, MSX2 + SRL_NAVBAR_INGAME_X, MSY2 + SRL_NAVBAR_INGAME_Y);
+  GLC_MMBox := IntToBox(MMX1 + SRL_NAVBAR_INGAME_X, MMY1 + SRL_NAVBAR_INGAME_Y, MMX2 + SRL_NAVBAR_INGAME_X, MMY2 + SRL_NAVBAR_INGAME_Y);
+  GLC_MIBox := IntToBox(MIX1 + SRL_NAVBAR_INGAME_X, MIY1 + SRL_NAVBAR_INGAME_Y, MIX2 + SRL_NAVBAR_INGAME_X, MIY2 + SRL_NAVBAR_INGAME_Y);
+  GLC_MCBox := IntToBox(MCX1 + SRL_NAVBAR_INGAME_X, MCY1 + SRL_NAVBAR_INGAME_Y, MCX2 + SRL_NAVBAR_INGAME_X, MCY2 + SRL_NAVBAR_INGAME_Y);
+
+  Result := GLHSetup(ProcessID);
+End;

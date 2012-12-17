@@ -1,11 +1,15 @@
 Function GLH_BankScreen: Boolean;
+var
+  P: TPoint;
 Begin
-  Result := GLHook_FindTextAreaEx(IntToBox(195, 76, 324, 96), ['Bank', 'Bank of Runescape'], True, 5, 10);
+  Result := GLHook_FindTextAreaEx(P, IntToBox(195, 76, 324, 96), ['Bank', 'Bank of Runescape'], True, 5, 10);
 End;
 
 Function GLH_DepositScreen: Boolean;
+var
+  P: TPoint;
 Begin
-  Result := GLHook_FindTextAreaEx(IntToBox(144, 83, 396, 101), ['Deposit', 'Box'], True, 4, 10);
+  Result := GLHook_FindTextAreaEx(P, IntToBox(144, 83, 396, 101), ['Deposit', 'Box'], True, 4, 10);
 End;
 
 Function GLH_PinScreen: Boolean;
@@ -34,8 +38,9 @@ End;
 Function GLH_InPin(Pin: String): Boolean;
 Var
   PinBox: TBox;
-  I, J, H, Tries, X, Y: Integer;
-  QuestionCount: Integer;
+  TP: TPoint;
+  I, J, H, Tries: Integer;
+  X, Y, QuestionCount: Integer;
   ItemArray: TPanelArray;
 Begin
   Result := False;
@@ -59,33 +64,52 @@ Begin
   GLHook_ShowNavBar;
   While GLH_PinScreen Do
   Begin
-    For I := 0 To 4 Do
+    For I := 1 To 4 Do
     Begin
       If (Not GLH_PinScreen) Then Break;
 
-      QuestionCount := GLHook_CountTextInArea(IntToBox(426, 85, 494, 101), '?', False, 5, 0);
+      QuestionCount := GLHook_CountTextInArea(IntToBox(426, 85, 494, 101), '?', True, 5, 5);
       GetMousePos(X, Y);
-      H := High(ItemArray);
-      For J := 0 To H Do
+      If (GLHook_FindTextArea(TP, IntToBox(33, 153, 376, 370), Pin[I], True, 0, 0)) Then
       Begin
-        PinBox:= IntToBox(ItemArray[J].SX[0], ItemArray[J].SY[0], ItemArray[J].SX[2], ItemArray[J].SY[2]);
-        If (GLHook_FindTextAreaEx(PinBox, [Pin[I]], False, 0, 0)) Then
+        H := High(ItemArray);
+        For J := 0 To H Do
         Begin
-          If GLH_PinScreen Then
-            MouseBox(PinBox.X1, PinBox.Y1, PinBox.X2, PinBox.Y2, MOUSE_LEFT);
-          Break;
+          PinBox := IntToBox(ItemArray[J].SX[0], ItemArray[J].SY[0], ItemArray[J].SX[2], ItemArray[J].SY[2]);
+          If IntInBox(TP.X, TP.Y, PinBox) Then
+          Begin
+            With PinBox do
+              If GLH_PinScreen Then
+                MouseBox(X1, Y1, X2, Y2, MOUSE_LEFT);
+            Break;
+          End;
+        End;
+      End Else
+        Begin
+          H := High(ItemArray);
+          For J := 0 to H do
+          Begin
+            PinBox := IntToBox(ItemArray[J].SX[0], ItemArray[J].SY[0], ItemArray[J].SX[2], ItemArray[J].SY[2]);
+            If IntInBox(X, Y, PinBox) Then
+            Begin
+              With PinBox Do
+                If PinScreen Then
+                  MouseBox(X1, Y1, X2, Y2, MOUSE_LEFT);
+              Break;
+            End;
+          End;
         End;
 
-        Wait(100);
-        While (GLHook_CountTextInArea(IntToBox(426, 85, 494, 101), '?', False, 5, 0) = QuestionCount) Do
-          Wait(500);
+      Wait(100);
+      While (GLHook_CountTextInArea(IntToBox(426, 85, 494, 101), '?', True, 5, 5) = QuestionCount) Do
+        Wait(500);
 
-        Wait(RandomRange(300, 600));
-        If (GLH_BankScreen Or (Not GLH_PinScreen)) Then
-        Begin
-          Result := True;
-          Exit;
-        End;
+      Wait(RandomRange(300, 600));
+
+      If (GLH_BankScreen Or (Not GLH_PinScreen)) Then
+      Begin
+        Result := True;
+        Exit;
       End;
     End;
     GLHook_HideNavBar;

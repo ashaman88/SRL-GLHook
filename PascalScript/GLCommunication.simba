@@ -8,6 +8,11 @@
   {$loadlib GLHook}
 {$ENDIF}
 
+{*
+  Structures To Hold OpenGL Information On The Simba Side.
+  These Functions Are The Equivalent of Those on the C++ Side.
+*}
+
 type TModel = record
   ID: Cardinal;
   SX, SY: Integer;
@@ -52,6 +57,13 @@ type TFontArray = array of TFontInfo;
 type TTextInfoArray = Array Of TTextInfo;
 type TTextColourArray = Array Of TTextColour;
 type T2DTextInfoArray = Array Of TTextInfoArray;
+
+
+
+{*
+  For PascalScript only, the following functions Iterate pointers given to Simba by GLHook
+  And fills a structure with the information it receives.
+*}
 
 Function GLHook_IterateItems(Ptr, Size: Integer): TPanelArray;
 var
@@ -126,6 +138,10 @@ Begin
   end;
 End;
 
+{*
+  Gets All Items on the screen. Inventory, Icons, Minimap symbols/icons, interfaces, etc..
+*}
+
 Function GLHook_GetAllItems: TPanelArray;
 var
   Ptr, Size: Integer;
@@ -134,6 +150,11 @@ begin
   SetLength(Result, Size);
   Result := GLHook_IterateItems(Ptr, Size);
 end;
+
+{*
+  Gets Items with the specified ID.
+  If none are found, the result is an empty array.
+*}
 
 Function GLHook_GetItemsByID(ID: Integer): TPanelArray;
 var
@@ -144,6 +165,11 @@ begin
   Result := GLHook_IterateItems(Ptr, Size);
 end;
 
+{*
+  Gets Items within a specified area on screen.
+  If none are found, the result is an empty array.
+*}
+
 Function GLHook_GetItemsByArea(Area: TBox): TPanelArray;
 var
   Ptr, Size: Integer;
@@ -152,6 +178,37 @@ begin
   SetLength(Result, Size);
   Result := GLHook_IterateItems(Ptr, Size);
 end;
+
+{*
+  Get Items with a specific ID within the specified area.
+  If None are found, the result is an empty array.
+*}
+
+Function GLHook_GetItemsByAreaEx(ID: Integer; Area: TBox): TPanelArray;
+var
+  I, J, L: Integer;
+  Items: TPanelArray;
+Begin
+  Items := GLHook_GetItemsByArea(Area);
+  L := Length(Items);
+  For I := 0 To L - 1 Do
+    If (Items[I].BaseID = ID) Then
+    Begin
+      SetLength(Result, J + 1);
+      Result[J] := Items[I];
+      Inc(J);
+    End;
+End;
+
+{*
+  Gets Items using their BaseID, their MeanID and a specified Tolerance.
+
+  The BaseID is the actual ID of the item.
+  The MeanID is the Average RGB ID of the item. This allows us to distinguish every single item.
+  The Tolerance is how accurate the search should be.
+
+  If nothing is found, the result is an empty array.
+*}
 
 Function GLHook_GetItemsByMeanID(BaseID, MeanID, Tolerance: Integer): TPanelArray;
 var
@@ -169,6 +226,11 @@ begin
     end;
 end;
 
+{*
+  Gets all models. If none are found, the result is an empty array.
+  Examples of Models: NPCs, Banks, Walls, Buildings, Ground Items, etc..
+*}
+
 Function GLHook_GetAllModels: TModelArray;
 var
   Ptr, Size: Integer;
@@ -177,6 +239,11 @@ begin
   SetLength(Result, Size);
   Result := GLHook_IterateModels(Ptr, Size);
 end;
+
+{*
+  Gets all models with a specified ID. If none are found, the result is an empty array.
+  Examples of Models: NPCs, Banks, Walls, Buildings, Ground Items, etc..
+*}
 
 Function GLHook_GetModelsByID(ID: Cardinal): TModelArray;
 var
@@ -187,6 +254,12 @@ begin
   Result := GLHook_IterateModels(Ptr, Size);
 end;
 
+
+{*
+  Gets all models with a specific triangle count. If none are found, the result is an empty array.
+  Examples of Models: NPCs, Banks, Walls, Buildings, Ground Items, etc..
+*}
+
 Function GLHook_GetModelsByTriangleCount(Count: Cardinal): TModelArray;
 var
   Ptr, Size: Integer;
@@ -195,6 +268,13 @@ begin
   SetLength(Result, Size);
   Result := GLHook_IterateModels(Ptr, Size);
 end;
+
+
+{*
+  Gets all models within a specified area on the screen.
+  If none are found, the result is an empty array.
+  Examples of Models: NPCs, Banks, Walls, Buildings, Ground Items, etc..
+*}
 
 Function GLHook_GetModelsByArea(Area: TBox): TModelArray;
 var
@@ -205,6 +285,12 @@ begin
   Result := GLHook_IterateModels(Ptr, Size);
 end;
 
+
+{*
+  Gets all font characters/letters displayed on screen.
+  If none are found, the result is an empty array.
+*}
+
 Function GLHook_GetAllFonts: TFontArray;
 var
   Ptr, Size: Integer;
@@ -213,6 +299,10 @@ begin
   SetLength(Result, Size);
   Result := GLHook_IterateFonts(Ptr, Size);
 end;
+
+{*
+  Gets all fonts/characters/letters within a specified area on screen.
+*}
 
 Function GLHook_GetFontsByArea(Area: TBox): TFontArray;
 var
@@ -223,6 +313,11 @@ begin
   Result := GLHook_IterateFonts(Ptr, Size);
 end;
 
+
+{*
+  Needed this for Lape. I decided to keep it anyway. Returns the absolute value of a specified Integer.
+*}
+
 Function GLH_iAbs(I: Integer): Integer;
 Begin
   Result := I;
@@ -230,391 +325,403 @@ Begin
     Result := Result * -1;
 End;
 
-Function GLHook_FontsToText1D(var FontArray: TFontArray; Shadow, RecordColours: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): TTextColourArray;
+{*
+  Removes all shadows from the specified Text/Array of Characters/Letters.
+  Some characters/letters are rendered with a shadow and is detected as:
+  aa bb cc dd..
+
+  Instead of:
+
+  a b c d.        This fixes that by removing the shadows.
+*}
+
+Function GLHook_RemoveFontShadows(Fonts: TFontArray): TFontArray;
 var
-  I, J, K, L, N: Integer;
-  IX, IY: Integer;
+  I, J, L: Integer;
+Begin
+  L := Length(Fonts);
+  If (L < 1) Then Exit;
+
+  If ((L < 2) or (L mod 2 <> 0)) Then
+  Begin
+    Result := Fonts;
+    Exit;
+  End;
+
+  SetLength(Result, L / 2);
+  For I := 0 To L - 2 Do
+  Begin
+    If (Fonts[I].X - Fonts[I + 1].X = 1) Then
+      Result[J] := Fonts[I + 1];
+
+    Inc(I); Inc(J);
+  End;
+End;
+
+{*
+  Returns an array of TextColourInfo. Each Dimension within the array is one line of text. That line can have various different colours.
+  This function returns all the information needed to determine the colour of every word/sentence within a line specified by FontArray Parameter.
+  Removes Shadows if specified. MinHSpacing is the amount of spacing between each letter. MinVSpacing is the amount of spacing between each Line.
+
+  Note: See GLH_GetChatBoxTextEx for example.
+*}
+
+Function GLHook_FontsToText1D(var Fonts: TFontArray; Shadow: Boolean; MinHSpacing, MinVSpacing: Integer): TTextColourArray;
+var
+  I, J, K, L: Integer;
   X, Y: Integer;
-  X2, Y2: Integer;
+  IX, IY: Integer;
   Text: String;
-  Store: Boolean;
+  StoreColour: Boolean;
   SameLine, NewLine: Boolean;
 Begin
-  L := High(FontArray);
-  If (L < 1) Then
-    Exit;
-
-  Store := True;
-
   If (Shadow) Then
-  Begin
-    K := 0;
-    I := 1;
-    J := 2;
-  End Else
-    Begin
-      K := 0;
-      I := 0;
-      J := 1;
-    End;
+    Fonts := GLHook_RemoveFontShadows(Fonts);
+
+  L := High(Fonts);
+  If (L < 1) Then Exit;
+  StoreColour := True;
 
   SetLength(Result, 1);
 
-  For I := I To L Do
+  For I := 0 To L Do
   Begin
-    X := Round(FontArray[I].X + FontArray[I].VX[2]);
-    Y := Round(FontArray[I].Y);
-
-    If ((L > 1) And (I <= L)) Then
+    If (Not InRange(Ord(Fonts[I].Symbol), 32, 126)) Then
     Begin
-      X2 := Round(FontArray[I + J].X);
-      Y2 := Round(FontArray[I + J].Y);
-    End Else
-      Begin
-        X2 := Round(FontArray[I].X);
-        Y2 := Round(FontArray[I].Y);
-      End;
-
-    Text := Text + FontArray[I].Symbol;
-    If (X2 - X) >= MinHSpacing Then
       Text := Text + ' ';
-
-    If Store Then
-    Begin
-      IX := Round(FontArray[I].X);
-      IY := Y - FontArray[I].VY[2];
-      Store := False;
+      Continue;
     End;
 
-    NewLine := ((GLH_iAbs(Y2 - Y)) >= MinVSpacing);
-    If (RecordColours And (FontArray[I].Colour <> FontArray[I + J].Colour) And (Not NewLine)) Then
+    If (L > 1) And (I < L) Then
     Begin
-      SetLength(Result[N].Areas, Length(Result[N].Areas) + 1);
-      SetLength(Result[N].Colours, Length(Result[N].Colours) + 1);
-      Result[N].Text := Text;
-      Result[N].Areas[K].X1 := IX;
-      Result[N].Areas[K].Y1 := IY;
-      Result[N].Areas[K].X2 := X;
-      Result[N].Areas[K].Y2 := Y;
-      Result[N].Colours[K] := FontArray[I].Colour;
-      Inc(K);
+      X := Round(Fonts[I + 1].X - (Fonts[I].X + Fonts[I].VX[2]));
+      Y := Round(Fonts[I + 1].Y - Fonts[I].Y);
+    End Else
+      Begin
+        X := Round(-Fonts[I].X);
+        Y := Round(Fonts[I].Y);
+      End;
+
+    Text := Text + Fonts[I].Symbol;
+
+    If (iAbs(X) >= MinHSpacing) Then
+      Text := Text + ' ';
+
+    If (StoreColour) Then
+    Begin
+      IX := Round(Fonts[I].X);
+      IY := Round(Fonts[I].Y - Fonts[I].VY[2]);
+      StoreColour := False;
+    End;
+
+    NewLine := (iAbs(Y) >= MinVSpacing);
+    If ((I < L) And (Fonts[I].Colour <> Fonts[I + 1].Colour) And (Not NewLine)) Then
+    Begin
+      SetLength(Result[K].Areas, Length(Result[K].Areas) + 1);
+      SetLength(Result[K].Colours, Length(Result[K].Colours) + 1);
+      Result[K].Text := Text;
+      Result[K].Areas[J].X1 := IX;
+      Result[K].Areas[J].Y1 := IY;
+      Result[K].Areas[J].X2 := Round(Fonts[I].X + Fonts[I].VX[2]);
+      Result[K].Areas[J].Y2 := Round(Fonts[I].Y);
+      Result[K].Colours[J] := Fonts[I].Colour;
+      Inc(J);
       SameLine := True;
     End;
 
     If (NewLine) Then
     Begin
-      SetLength(Result[N].Areas, Length(Result[N].Areas) + 1);
-      SetLength(Result[N].Colours, Length(Result[N].Colours) + 1);
-      If (Not SameLine) Then K := 0;
+      SetLength(Result[K].Areas, Length(Result[K].Areas) + 1);
+      SetLength(Result[K].Colours, Length(Result[K].Colours) + 1);
+      If (Not SameLine) Then J := 0;
 
-      Result[N].Text := Text;
-      Result[N].Areas[K].X1 := Round(FontArray[I].X);
-      Result[N].Areas[K].Y1 := Y - FontArray[I].VY[2];
-      Result[N].Areas[K].X2 := X;
-      Result[N].Areas[K].Y2 := Y;
-      Result[N].Colours[K] := FontArray[I].Colour;
+      Result[K].Text := Text;
+      Result[K].Areas[J].X1 := Round(Fonts[I].X);
+      Result[K].Areas[J].Y1 := Round(Fonts[I].Y - Fonts[I].VY[2]);
+      Result[K].Areas[J].X2 := Round(Fonts[I].X + Fonts[I].VX[2]);
+      Result[K].Areas[J].Y2 := Round(Fonts[I].Y);
+      Result[K].Colours[J] := Fonts[I].Colour;
       SetLength(Result, Length(Result) + 1);
 
       Text := '';
-      K := 0; Inc(N);
-      Store := True;
+      J := 0; Inc(K);
+      StoreColour := True;
       SameLine := False;
     End;
-
-    If Shadow Then Inc(I);
   End;
 End;
 
-Function GLHook_FontsToText2D(var FontArray: TFontArray; Shadow, RecordColours: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): T2DTextInfoArray;
+{*
+  Returns a 2Dimension array of TTextInfo. Although rarely needed, it is needed in some cases. This function determines
+  the colour of every Letter/Word/Sentence within a line of text. If Multiple lines are passed, it will parse them all.
+  Each Index in the array will have one line of text and an array of all colours/coloured-text found within that line as well
+  as their positions.
+
+  The usage of this function is similar to that of GLHook_FontsToText1D. See GLH_GetChatBoxTextEx for an example.
+*}
+
+Function GLHook_FontsToText2D(var Fonts: TFontArray; Shadow: Boolean; MinHSpacing, MinVSpacing: Integer): T2DTextInfoArray;
 var
-  I, J, K, L, N: Integer;
-  IX, IY: Integer;
+  I, J, K, L: Integer;
   X, Y: Integer;
-  X2, Y2: Integer;
+  IX, IY: Integer;
   Text: String;
-  Store: Boolean;
+  StoreColour: Boolean;
   TextInfo: TTextInfoArray;
   SameLine, NewLine: Boolean;
 Begin
-  L := High(FontArray);
-  If (L < 1) Then
-    Exit;
-
-  Store := True;
-
   If (Shadow) Then
+    Fonts := GLHook_RemoveFontShadows(Fonts);
+
+  L := High(Fonts);
+  If (L < 1) Then Exit;
+  StoreColour := True;
+
+  For I := 0 To L Do
   Begin
-    K := 0;
-    I := 1;
-    J := 2;
-  End Else
+    If (Not InRange(Ord(Fonts[I].Symbol), 32, 126)) Then
     Begin
-      K := 0;
-      I := 0;
-      J := 1;
+      Text := Text + ' ';
+      Continue;
     End;
 
-  For I := I To L Do
-  Begin
-    X := Round(FontArray[I].X + FontArray[I].VX[2]);
-    Y := Round(FontArray[I].Y);
-
-    If ((L > 1) And (I <= L)) Then
+    If (L > 1) And (I < L) Then
     Begin
-      X2 := Round(FontArray[I + J].X);
-      Y2 := Round(FontArray[I + J].Y);
+      X := Round(Fonts[I + 1].X - (Fonts[I].X + Fonts[I].VX[2]));
+      Y := Round(Fonts[I + 1].Y - Fonts[I].Y);
     End Else
       Begin
-        X2 := Round(FontArray[I].X);
-        Y2 := Round(FontArray[I].Y);
+        X := Round(-Fonts[I].X);
+        Y := Round(Fonts[I].Y);
       End;
 
-    Text := Text + FontArray[I].Symbol;
-    If (X2 - X) >= MinHSpacing Then
+    Text := Text + Fonts[I].Symbol;
+
+    If (iAbs(X) >= MinHSpacing) Then
       Text := Text + ' ';
 
-    If Store Then
+    If StoreColour Then
     Begin
-      IX := Round(FontArray[I].X);
-      IY := Y - FontArray[I].VY[2];
-      Store := False;
+      IX := Round(Fonts[I].X);
+      IY := Round(Fonts[I].Y - Fonts[I].VY[2]);
+      StoreColour := False;
     End;
 
-    NewLine := ((GLH_iAbs(Y2 - Y)) >= MinVSpacing);
-    If (RecordColours And (FontArray[I].Colour <> FontArray[I + J].Colour) And (Not NewLine)) Then   //If Different Colours On Line..
-    Begin                                                                                            //Append The Current Text To The Array..
+    NewLine := (iAbs(Y) >= MinVSpacing);
+    If ((I < L) And (Fonts[I].Colour <> Fonts[I + 1].Colour) And (Not NewLine)) Then   //If Different Colours On Line..
+    Begin                                                                              //Append The Current Text To The Array..
       SetLength(TextInfo, Length(TextInfo) + 1);
-      TextInfo[K].Text := Text;
-      TextInfo[K].Area.X1 := IX;
-      TextInfo[K].Area.Y1 := IY;
-      TextInfo[K].Area.X2 := X;
-      TextInfo[K].Area.Y2 := Y;
-      TextInfo[K].Colour := FontArray[I].Colour;
-      Inc(K);
-      Text := '';                          //Clear Everything && Start Grabbing The Next Set of Text With A Different Colour.
+      TextInfo[J].Text := Text;
+      TextInfo[J].Area.X1 := IX;
+      TextInfo[J].Area.Y1 := IY;
+      TextInfo[J].Area.X2 := Round(Fonts[I].X + Fonts[I].VX[2]);
+      TextInfo[J].Area.Y2 := Round(Fonts[I].Y);
+      TextInfo[J].Colour := Fonts[I].Colour;
+      Inc(J);
+      Text := '';
       SameLine := True;
     End;
 
     If (NewLine) Then                     //If There's a New-Line, Append To The Current Text, Push It To The Result, Reset Everything.
     Begin
       SetLength(TextInfo, Length(TextInfo) + 1);
-      If (Not SameLine) Then K := 0;
+      If (Not SameLine) Then J := 0;
 
-      TextInfo[K].Text := Text;
-      TextInfo[K].Area.X1 := Round(FontArray[I].X);
-      TextInfo[K].Area.Y1 := Y - FontArray[I].VY[2];
-      TextInfo[K].Area.X2 := X;
-      TextInfo[K].Area.Y2 := Y;
-      TextInfo[K].Colour := FontArray[I].Colour;
+      TextInfo[J].Text := Text;
+      TextInfo[J].Area.X1 := Round(Fonts[I].X);
+      TextInfo[J].Area.Y1 := Round(Fonts[I].Y - Fonts[I].VY[2]);
+      TextInfo[J].Area.X2 := Round(Fonts[I].X + Fonts[I].VX[2]);
+      TextInfo[J].Area.Y2 := Round(Fonts[I].Y);
+      TextInfo[J].Colour := Fonts[I].Colour;
 
       SetLength(Result, Length(Result) + 1);
-      Result[N] := TextInfo;                   //Each Array Is One Line Of Text With A List Of All Colours.
+      Result[K] := TextInfo;                   //Each Array Is One Line Of Text With A List Of All Colours.
 
       Text := '';
-      K := 0; Inc(N);
-      Store := True;
+      J := 0; Inc(K);
+      StoreColour := True;
       SameLine := False;
       SetLength(TextInfo, 0);
     End;
-
-    If Shadow Then Inc(I);
   End;
 End;
 
-Function GLHook_FontsToTextEx(var FontArray: TFontArray; Shadow: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): TTextInfoArray;
-var
-  I, J, K, L: Integer;
-  IX, IY: Integer;
-  X, Y: Integer;
-  X2, Y2: Integer;
-  Text: String;
-  Store: Boolean;
-Begin
-  L := High(FontArray);
-  If (L < 1) Then
-    Exit;
+{*
+  This function returns an array of TTextInfo. Each Index in the array will contain a portion of text with it's position on the screen as well
+  as the colours of the text within that line.
+*}
 
-  Store := True;
-
-  If (Shadow) Then
-  Begin
-    K := 0;
-    I := 1;             //Actual Font's Index.. 0 = Font's Shadow Index.
-    J := 2;             //Stride To The Next Font.
-  End Else
-    Begin
-      K := 0;
-      I := 0;
-      J := 1;
-    End;
-
-  For I := I To L Do
-  Begin
-    X := Round(FontArray[I].X + FontArray[I].VX[2]);    //Font Position + Width.
-    Y := Round(FontArray[I].Y);                         //Bottom of the Font.
-
-    If ((L > 1) And (I <= L)) Then
-    Begin
-      X2 := Round(FontArray[I + J].X);                    //The Next Character's X.
-      Y2 := Round(FontArray[I + J].Y);                    //The Next Character's. Y.
-    End Else
-      Begin
-        X2 := Round(FontArray[I].X);
-        Y2 := Round(FontArray[I].Y);
-      End;
-
-    Text := Text + FontArray[I].Symbol;
-    If (X2 - X) >= MinHSpacing Then
-      Text := Text + ' ';
-
-    If Store Then
-    Begin
-      IX := Round(FontArray[I].X);
-      IY := Y - FontArray[I].VY[2];
-      Store := False;
-    End;
-
-    If (GLH_iAbs(Y2 - Y)) >= MinVSpacing Then
-    Begin
-      SetLength(Result, Length(Result) + 1);
-      Result[K].Text := Text;
-      Result[K].Area.X1 := IX;
-      Result[K].Area.Y1 := IY;
-      Result[K].Area.X2 := X;
-      Result[K].Area.Y2 := Y;
-      Result[K].Colour := FontArray[I].Colour;
-      Inc(K);
-      Text := '';
-      Store := True;
-    End;
-
-    If Shadow Then Inc(I);
-  End;
-End;
-
-Function GLHook_FontsToTextColours(var FontArray: TFontArray; Shadow, RecordColours: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): TTextInfoArray;
-var
-  I, J, K, L: Integer;
-  IX, IY: Integer;
-  X, Y: Integer;
-  X2, Y2: Integer;
-  Text: String;
-  Store: Boolean;
-  OldColour: Integer;
-  ColourChanged: Boolean;
-Begin
-  L := High(FontArray);
-  If (L < 1) Then
-    Exit;
-
-  Store := True;
-
-  If (Shadow) Then
-  Begin
-    K := 0;
-    I := 1;
-    J := 2;
-  End Else
-    Begin
-      K := 0;
-      I := 0;
-      J := 1;
-    End;
-
-  For I := I To L Do
-  Begin
-    X := Round(FontArray[I].X + FontArray[I].VX[2]);
-    Y := Round(FontArray[I].Y);
-
-    If ((L > 1) And (I <= L)) Then
-    Begin
-      X2 := Round(FontArray[I + J].X);
-      Y2 := Round(FontArray[I + J].Y);
-    End Else
-      Begin
-        X2 := Round(FontArray[I].X);
-        Y2 := Round(FontArray[I].Y);
-      End;
-
-    Text := Text + FontArray[I].Symbol;
-    If (X2 - X) >= MinHSpacing Then
-      Text := Text + ' ';
-
-    If Store Then
-    Begin
-      OldColour := FontArray[I].Colour;
-      IX := Round(FontArray[I].X);
-      IY := Y - FontArray[I].VY[2];
-      Store := False;
-    End;
-
-    If (RecordColours And (FontArray[I + J].Colour <> OldColour)) Then ColourChanged := True;
-
-    If (((GLH_iAbs(Y2 - Y)) >= MinVSpacing) Or ColourChanged) Then
-    Begin
-      SetLength(Result, Length(Result) + 1);
-      Result[K].Text := Text;
-      Result[K].Area.X1 := IX;
-      Result[K].Area.Y1 := IY;
-      Result[K].Area.X2 := X;
-      Result[K].Area.Y2 := Y;
-      Result[K].Colour := FontArray[I].Colour;
-      Inc(K);
-      Text := '';
-      Store := True;
-      ColourChanged := False;
-    End;
-
-    If Shadow Then Inc(I);
-  End;
-End;
-
-Function GLHook_FontsToText(var FontArray: TFontArray; Shadow: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): TStringArray;
+Function GLHook_FontsToColourText(var Fonts: TFontArray; Shadow: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): TTextInfoArray;
 var
   I, J, L: Integer;
   X, Y: Integer;
-  X2, Y2: Integer;
+  IX, IY: Integer;
+  Colour: Integer;
   Text: String;
+  StoreColour: Boolean;
 Begin
-  L := High(FontArray);
-  If (L < 1) Then
-    Exit;
-
-  SetLength(Result, 1);
-
   If (Shadow) Then
+    Fonts := GLHook_RemoveFontShadows(Fonts);
+
+  L := High(Fonts);
+  If (L < 1) Then Exit;
+  StoreColour := True;
+
+  For I := 0 To L Do
   Begin
-    I := 1;
-    J := 2;
-  End Else
+    If (Not InRange(Ord(Fonts[I].Symbol), 32, 127)) Then
     Begin
-      I := 0;
-      J := 1;
+      Text := Text + ' ';
+      Continue;
     End;
 
-  For I := I To L Do
-  Begin
-    X := Round(FontArray[I].X + FontArray[I].VX[2]);
-    Y := Round(FontArray[I].Y);
-
-    If ((L > 1) And ((I + J) < L)) Then
+    If (L > 1) And (I + 1 <= L) Then
     Begin
-      X2 := Round(FontArray[I + J].X);
-      Y2 := Round(FontArray[I + J].Y);
+      X := Round(Fonts[I + 1].X - (Fonts[I].X + Fonts[I].VX[2]));
+      Y := Round(Fonts[I + 1].Y - Fonts[I].Y);
     End Else
       Begin
-        X2 := Round(FontArray[I].X);
-        Y2 := Round(FontArray[I].Y);
+        X := Round(-Fonts[I].X);
+        Y := Round(Fonts[I].Y);
       End;
 
-    Text := Text + FontArray[I].Symbol;
-    If (X2 - X) >= MinHSpacing Then
+    Text := Text + Fonts[I].Symbol;
+
+    If (iAbs(X) >= MinHSpacing) Then
       Text := Text + ' ';
 
-    If (GLH_iAbs(Y2 - Y) >= MinVSpacing) Then
-      Text := Text + '\n\r';
+    If (StoreColour) Then
+    Begin
+      Colour := Fonts[I].Colour;
+      IX := Round(Fonts[I].X);
+      IY := Round(Fonts[I].Y - Fonts[I].VY[2]);
+      StoreColour := False;
+    End;
 
-    If Shadow Then I := I + 1;
+    If ((iAbs(Y) >= MinVSpacing) Or ((I + 1 <= L) And (Fonts[I + 1].Colour <> Colour))) Then
+    Begin
+      SetLength(Result, Length(Result) + 1);
+      Result[J].Text := Text;
+      Result[J].Area.X1 := IX;
+      Result[J].Area.Y1 := IY;
+      Result[J].Area.X2 := Round(Fonts[I].X + Fonts[I].VX[2]);
+      Result[J].Area.Y2 := Round(Fonts[I].Y);
+      Result[J].Colour := Fonts[I].Colour;
+      Inc(J);
+      Text := '';
+      StoreColour := True;
+    End;
+  End;
+End;
+
+{*
+  This function returns an array of TTextInfo. It is probably one of the most used functions for text recognition.
+  Each index in the array will contain the bounding box around the text displayed on screen as well as it's colour info and the text itself.
+*}
+
+Function GLHook_FontsToTextEx(var Fonts: TFontArray; Shadow: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): TTextInfoArray;
+var
+  I, J, L: Integer;
+  X, Y: Integer;
+  IX, IY: Integer;
+  Text: String;
+  StoreColour: Boolean;
+Begin
+  If (Shadow) Then
+    Fonts := GLHook_RemoveFontShadows(Fonts);
+
+  L := High(Fonts);
+  If (L < 1) Then Exit;
+  StoreColour := True;
+
+  For I := 0 To L Do
+  Begin
+    If (Not InRange(Ord(Fonts[I].Symbol), 32, 126)) Then
+    Begin
+      Text := Text + ' ';
+      Continue;
+    End;
+
+    If (L > 1) And (I + 1 <= L) Then
+    Begin
+      X := Round(Fonts[I + 1].X - (Fonts[I].X + Fonts[I].VX[2]));
+      Y := Round(Fonts[I + 1].Y - Fonts[I].Y);
+    End Else
+      Begin
+        X := Round(-Fonts[I].X);
+        Y := Round(Fonts[I].Y);
+      End;
+
+    Text := Text + Fonts[I].Symbol;
+
+    If (iAbs(X) >= MinHSpacing) Then
+      Text := Text + ' ';
+
+    If (StoreColour) Then
+    Begin
+      IX := Round(Fonts[I].X);
+      IY := Round(Fonts[I].Y - Fonts[I].VY[2]);
+      StoreColour := False;
+    End;
+
+    If (iAbs(Y) >= MinVSpacing) Then
+    Begin
+      SetLength(Result, Length(Result) + 1);
+      Result[J].Text := Text;
+      Result[J].Area.X1 := IX;
+      Result[J].Area.Y1 := IY;
+      Result[J].Area.X2 := Round(Fonts[I].X + Fonts[I].VX[2]);
+      Result[J].Area.Y2 := Round(Fonts[I].Y);
+      Result[J].Colour := Fonts[I].Colour;
+      Inc(J);
+      Text := '';
+      StoreColour := True;
+    End;
+  End;
+End;
+
+{*
+  This function returns an array of strings from a given FontArray. It splits text horizontally and vertically.
+  Each string within the array is one line of text. MinHSpacing and MinVSpacing specifies how the function will split.
+*}
+
+Function GLHook_FontsToText(var Fonts: TFontArray; Shadow: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): TStringArray;
+var
+  I, L: Integer;
+  X, Y: Integer;
+  Text: String;
+Begin
+  If (Shadow) Then
+    Fonts := GLHook_RemoveFontShadows(Fonts);
+
+  L := High(Fonts);
+  If (L < 1) Then Exit;
+
+  For I := 0 To L Do
+  Begin
+    If (Not InRange(Ord(Fonts[I].Symbol), 32, 126)) Then
+    Begin
+      Text := Text + ' ';
+      Continue;
+    End;
+
+    If (L > 1) And (I + 1 <= L) Then
+    Begin
+      X := Round(Fonts[I + 1].X - (Fonts[I].X + Fonts[I].VX[2]));
+      Y := Round(Fonts[I + 1].Y - Fonts[I].Y);
+    End Else
+      Begin
+        X := Round(-Fonts[I].X);
+        Y := Round(Fonts[I].Y);
+      End;
+
+    Text := Text + Fonts[I].Symbol;
+
+    If (iAbs(X) >= MinHSpacing) Then
+      Text := Text + ' ';
+
+    If (iAbs(Y) >= MinVSpacing) Then
+      Text := Text + '\n\r';
   End;
 
   ExplodeWrap('\n\r', Text, Result);
@@ -622,6 +729,93 @@ Begin
     Result[I] := Trim(Result[I]);
 End;
 
+{*
+  For those requiring the most powerful, accurate and most efficient text recognition line by line, it does not get any better than this.
+  This function will split a fontarray into lines taking speed into consideration as well as the position of each character.
+  This function will return an array of TTextInfo which will contain the colour of the text within that line as well as each line found,
+  and the area in which it was found on the screen.
+
+  P.S. Most of the time this function isn't necessary but it's definitely good to have more power, options, speed, and accuracy.
+*}
+
+Function GLHook_SplitFontsHorizontallyEx(Fonts: TFontArray; Shadow: Boolean; MinHSpacing: Integer; MinVSpacing: Integer): TTextInfoArray;
+var
+  X, Y, I, J, L, IX, IY: Integer;
+  MinHeight, MaxHeight: Single;
+  NewLine: Boolean;
+  Text: String;
+Begin
+  If (Shadow) Then
+    Fonts := GLHook_RemoveFontShadows(Fonts);
+
+  L := High(Fonts);
+  If (L < 1) Then Exit;
+  NewLine := True;
+
+  For I := 0 To L Do
+  Begin
+    If (Not InRange(Ord(Fonts[I].Symbol), 32, 126)) Then
+    Begin
+      Text := Text + ' ';
+      Continue;
+    End;
+
+    If (NewLine) Then
+    Begin
+      Text := '';
+      IX := Round(Fonts[I].X);
+      IY := Round(Fonts[I].Y - Fonts[I].VY[2]);
+      MinHeight := Fonts[I].Y - Round(MinVSpacing / 2);
+      MaxHeight := Fonts[I].Y + Round(MinVSpacing / 2);
+      NewLine := False;
+    End;
+
+    If (L > 1) And (I + 1 <= L) Then
+    Begin
+      X := Round(Fonts[I + 1].X - (Fonts[I].X + Fonts[I].VX[2]));
+      Y := Round(Fonts[I + 1].Y - Fonts[I].Y);
+    End Else
+      Begin
+        X := Round(-Fonts[I].X);
+        Y := Round(Fonts[I].Y);
+      End;
+
+    If ((Fonts[I].Y >= MinHeight) And (Fonts[I].Y <= MaxHeight)) Then
+      Text := Text + Fonts[I].Symbol
+    Else
+      Begin
+        Dec(I);
+        SetLength(Result, J + 1);
+        Result[J].Text := Text;
+        Result[J].Area.X1 := IX;
+        Result[J].Area.Y1 := IY;
+        Result[J].Area.X2 := Round(Fonts[I].X + Fonts[I].VX[2]);
+        Result[J].Area.Y2 := Round(Fonts[I].Y);
+        Result[J].Colour := Fonts[I].Colour;
+        Inc(J);
+        NewLine := True;
+      End;
+
+    If (iAbs(X) >= MinHSpacing) Then
+      Text := Text + ' ';
+
+    If (I = L) Then
+    Begin
+      SetLength(Result, J + 1);
+      Result[J].Text := Text;
+      Result[J].Area.X1 := IX;
+      Result[J].Area.Y1 := IY;
+      Result[J].Area.X2 := Round(Fonts[I].X + Fonts[I].VX[2]);
+      Result[J].Area.Y2 := Round(Fonts[I].Y);
+      Result[J].Colour := Fonts[I].Colour;
+    End;
+  End;
+End;
+
+{*
+  Finds a specified string within an array and returns where it is found as well as if it was found.
+  Needed this for Lape.
+*}
 Function PosStrArr(ToFind: String; SearchArray: TStringArray; Var Where: Integer): Boolean;
 var
   I, H: Integer;
@@ -636,44 +830,62 @@ Begin
     End;
 End;
 
+{*
+  Counts the specified text within the specified area.
+  The result is the amount of times the specified text was found within the specified area.
+  If no text is found, the result is 0.
+*}
+
 Function GLHook_CountTextInArea(Area: TBox; Text: String; Shadow: Boolean; MinHSpacing, MinVSpacing: Integer): Integer;
 Var
   I, J: Integer;
-  F: TFontArray;
+  Fonts: TFontArray;
   AreaFonts: TStringArray;
 Begin
-  F := GLHook_GetFontsByArea(Area);
-  AreaFonts := GLHook_FontsToText(F, Shadow, MinHSpacing, MinVSpacing);
+  Text := Lowercase(Text);
+  Fonts := GLHook_GetFontsByArea(Area);
+  AreaFonts := GLHook_FontsToText(Fonts, Shadow, MinHSpacing, MinVSpacing);
   For I := 0 To High(AreaFonts) Do
-    For J := 0 To Length(AreaFonts[I]) Do
-      If (LowerCase(AreaFonts[I][J]) = LowerCase(Text)) Then
+    For J := 1 To High(AreaFonts[I]) Do
+      If (AreaFonts[I][J] = Text) Then
         Inc(Result);
 End;
 
-Function GLHook_FindTextAreaEx(Area: TBox; Text: TStringArray; Shadow: Boolean; MinHSpacing, MinVSpacing: Integer): Boolean;
+{*
+  Returns whether a specified array of strings are found within a specified area.
+  Also returns the position of the found text. Point(-1, -1) is returned if nothing is found.
+*}
+
+Function GLHook_FindTextAreaEx(var P: TPoint; Area: TBox; Texts: TStringArray; Shadow: Boolean; MinHSpacing, MinVSpacing: Integer): Boolean;
 var
-  I, J: Integer;
-  F: TFontArray;
-  AreaFonts: TStringArray;
+  H, I, J, L: Integer;
+  Fonts: TFontArray;
+  AreaText: TTextInfoArray;
 Begin
-  F := GLHook_GetFontsByArea(Area);
-  AreaFonts := GLHook_FontsToText(F, Shadow, MinHSpacing, MinVSpacing);
-  For I := 0 To High(Text) Do
-    If {InStrArrEx(Text[I], AreaFonts, J) or }PosStrArr(Text[I], AreaFonts, J) Then
-    Begin
-      Result := True;
-      Break;
-    End;
+  Fonts := GLHook_GetFontsByArea(Area);
+  AreaText := GLHook_FontsToTextEx(Fonts, Shadow, MinHSpacing, MinVSpacing);
+
+  H := High(AreaText);
+  L := High(Texts);
+
+  For I := 0 To L Do
+    For J := 0 To H Do
+      If (Pos(Texts[I], AreaText[J].Text) > 0) Then
+      Begin
+        P := MiddleBox(AreaText[J].Area);
+        Result := True;
+        Exit;
+      End;
+  P := Point(-1, -1);
+  Result := False;
 End;
 
-Function GLHook_FindTextArea(Area: TBox; Text: String; Shadow: Boolean; MinVSpacing: Integer): Boolean;
-var
-  I: Integer;
+{*
+  Finds a specified string within a specified area. If found, the result is true and the position where the text was found.
+  Point(-1, -1) is return if nothing is found.
+*}
+
+Function GLHook_FindTextArea(var P: TPoint; Area: TBox; Text: String; Shadow: Boolean; MinHSpacing, MinVSpacing: Integer): Boolean;
 Begin
-  For I := 0 To 11 Do
-    If GLHook_FindTextAreaEx(Area, [Text], Shadow, I, MinVSpacing) Then
-    Begin
-      Result := True;
-      Break;
-    End;
+  Result := GLHook_FindTextAreaEx(P, Area, [Text], Shadow, MinHSpacing, MinVSpacing);
 End;

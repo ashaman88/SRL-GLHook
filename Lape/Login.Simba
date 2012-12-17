@@ -45,7 +45,56 @@ Begin
 End;
 
 Function GLH_ExitToLobby: Boolean;
+var
+  TP: TPoint;
+  I, Tries: Integer;
 Begin
+  Result := GLH_LobbyScreen;
+  If (Result) Then Exit;
+
+  If SRL_HasProc(srl_OnExitToLobby) Then
+    SRL_Procs[srl_OnExitToLobby]();
+
+  If (Not (GLH_GameTab(Tab_LogOut))) Then
+    Exit;
+
+  Wait(200 + Random(100));
+  GLHook_ShowNavBar;
+  While (GLH_LoggedIn) And (Tries < 10) Do
+  Begin
+    Inc(Tries);
+    If (GLHook_FindTextArea(TP, MIBox, 'Lobby', True, 4, 10)) Then
+    Begin
+      MMouse(TP.X, TP.Y, 5, 5);
+      ClickMouse2(MOUSE_LEFT);
+      For I := 0 To 10 Do
+      Begin
+        Wait(1000);
+        If (Not GLH_LobbyScreen) Then
+          If GLH_ValidEmail Then
+          Begin
+            Result := True;
+            Exit;
+          End;
+      End;
+    End Else
+      If (GLHook_FindTextArea(TP, MIBox, 'lick', True, 4, 10)) Then
+      Begin
+        MMouse(TP.X, TP.Y, 5, 5);
+        ClickMouse2(MOUSE_LEFT);
+        For I := 0 To 10 Do
+        Begin
+          Wait(1000);
+          If (Not GLH_LoggedIn) Then
+          Begin
+            Result := True;
+            SRL_ResetNavBar;
+            Exit;
+          End;
+        End;
+      End;
+  End;
+  GLHook_HideNavBar;
 End;
 
 Function GLH_LeaveLobby: Boolean;
@@ -54,24 +103,73 @@ var
   ExitButton: TPanelArray;
 Begin
   T := GetSystemTime;
-  While ((Not (Result)) And ((GetSystemTime - T) < 30000)) Do
+  GLHook_ShowNavBar;
+  While ((Not Result) And ((GetSystemTime - T) < 30000)) Do
   Begin
     ExitButton := GLHook_GetItemsByMeanID(GLI_Lobby_ExitButton, GLIM_Lobby_ExitButton, 5);
     If (Length(ExitButton) > 0) Then
-    Begin
-      GLHook_ShowNavBar;
       MouseBox(ExitButton[0].SX[0], ExitButton[0].SY[0], ExitButton[0].SX[2], ExitButton[0].SY[2], Mouse_Left);
-      GLHook_HideNavBar;
-    End;
+
     Wait(RandomRange(1000, 2000));
     Result := (Not (GLH_LobbyScreen));
   End;
+  GLHook_HideNavBar;
 End;
 
 Function GLH_LogOut: Boolean;
+var
+  TP: TPoint;
+  I, Tries: Integer;
 Begin
+  SRL_ExitedSquealOfFortune := False;
+
+  Result := (Not GLH_LoggedIn);
+  If Result Then Exit;
+  If SRL_HasProc(srl_OnLogOut) Then
+    SRL_Procs[srl_OnLogOut]();
+
+  If (Not GLH_GameTab(Tab_LogOut)) Then
+  Begin
+    GLH_CloseWindow;
+    If (Not GLH_GameTab(Tab_LogOut)) Then
+      Exit;
+  End;
+
+  Wait(200 + Random(100));
+  GLHook_ShowNavBar;
+
+  While (GLH_LoggedIn And (Tries < 10)) Do
+  Begin
+    Inc(Tries);
+    If (GLHook_FindTextArea(TP, MIBox, 'Login', True, 4, 10)) Then
+      Mouse(TP.X, TP.Y, 5, 5, MOUSE_LEFT)
+    Else If (GLHook_FindTextArea(TP, MIBox, 'lick', True, 4, 10)) Then
+      Mouse(TP.X, TP.Y, 5, 5, MOUSE_LEFT);
+
+    For I := 0 To 10 Do
+    Begin
+      Wait(1000);
+      If (Not GLH_LoggedIn) Then
+      Begin
+        Result := True;
+        SRL_ResetNavBar;
+        Exit;
+      End;
+    End;
+  End;
+  GLHook_HideNavBar;
 End;
 
 Function GLH_LoginToLobby: Boolean;
 Begin
+  Writeln('GLH_LoginToLobby Not Implemented Yet');
+  Result := False;
+  TerminateScript;
+End;
+
+Function GLH_LoginPlayer: Boolean;
+Begin
+  Writeln('GLH_LoginPlayer Not Implemented Yet');
+  Result := False;
+  TerminateScript;
 End;

@@ -90,40 +90,93 @@ Begin
 End;
 
 Function GLH_ClickContinue(SpaceBar, DoWait: Boolean): Boolean;
+var
+  C, T: Integer;
+  Button: TPanelArray;
 Begin
+  If ClickContinueEx(SpaceBar, DoWait) Then
+  Begin
+    Result := True;
+    Exit;
+  End;
+
+  Button := GLHook_GetItemsByAreaEx(GLI_ContinueButton, GLC_MCBox);
+  If (Length(Button) < 1) Then Exit;
+
+  C := CountColor(0, MCX1, MCY1, MCX2, MCY2);
+  GLHook_ShowNavBar;
+  If SpaceBar then
+    TypeByte(VK_SPACE)
+  Else
+    Mouse(Button[0].X, Button[0].Y, 5, 5, MOUSE_LEFT);
+  GLHook_HideNavBar;
+
+  Result := True;
+  If DoWait then
+    While (C = CountColor(0, MCX1, MCY1, MCX2, MCY2)) And (GetSystemTime < T) Do
+      Wait(50+random(50));
+End;
+
+Function GLH_ClickToContinue: Boolean;
+Begin
+  Result := GLH_ClickContinue(True, False);
 End;
 
 Function GLH_GetChatBoxTextEx(LineNumber, Colour: Integer): String;
 var
-  P: TPoint;
-  Bounds: TBox;
+  I, H, Line: Integer;
   Fonts: TFontArray;
-  TextInfo: TTextInfoArray;
+  TextInfo: T2DTextInfoArray;
 Begin
-  P := TextCoords(LineNumber);
-  Bounds := IntToBox(MCX1, P.Y, MCX2, P.Y + 13);
-  Fonts := GLHook_GetFontsByArea(Bounds);
-  TextInfo := GLHook_FontsToTextEx(Fonts, False, 4, 10);
-  If ((Length(TextInfo) > 0) And (TextInfo[0].Colour = Colour)) Then Result := TextInfo[0].Text;
+  Fonts := GLHook_GetFontsByArea(GLC_MCBox);
+  TextInfo := GLHook_FontsToText2D(Fonts, False, 3, 14);
+  Line := Length(TextInfo);
+
+  If ((Line < 1) Or (Not InRange(LineNumber, 1, 9))) Then Exit;
+  If (Line < (9 - LineNumber)) Then Exit;
+  Line := (9 - LineNumber);
+
+  H := High(TextInfo[Line]);
+
+  For I := 0 To H Do
+    If (TextInfo[Line][I].Colour = Colour) Then
+      Result := Result + TextInfo[Line][I].Text;
 End;
 
 Function GLH_GetChatBoxText(LineNumber: Integer): String;
 var
-  P: TPoint;
-  Bounds: TBox;
+  Line: Integer;
   Fonts: TFontArray;
   Text: TStringArray;
 Begin
-  P := TextCoords(LineNumber);
-  Bounds := IntToBox(MCX1, P.Y, MCX2, P.Y + 13);
-  Fonts := GLHook_GetFontsByArea(Bounds);
-  Text := GLHook_FontsToText(Fonts, False, 4, 10);
-  If (Length(Text) > 0) Then Result := Text[0];
+  Fonts := GLHook_GetFontsByArea(GLC_MCBox);
+  Text := GLHook_FontsToText(Fonts, False, 3, 14);
+  Line := Length(Text);
+
+  If ((Line < 1) Or (Not InRange(LineNumber, 1, 9))) Then Exit;
+  If (Line < (9 - LineNumber)) Then Exit;
+  Result := Text[9 - LineNumber];
+End;
+
+Function GLH_FindChatBoxTextEx(Text: String; LineNumber, Colour: Integer): Boolean;
+Begin
+  Result := (Pos(Text, GLH_GetChatBoxTextEx(LineNumber, Colour)) > 0);
 End;
 
 Function GLH_FindChatBoxText(Text: String; LineNumber: Integer): Boolean;
 Begin
   Result := (Pos(Text, GLH_GetChatBoxText(LineNumber)) > 0);
+End;
+
+Function GLH_IsChatBoxTextBetweenEx(Text: String; TextColour, StartLine, EndLine: Integer): Boolean;
+var
+  I: Integer;
+Begin
+  Result := True;
+  For I := Max(StartLine, EndLine) Downto Min(StartLine, EndLine) Do
+    If GLH_FindChatBoxTextEx(Text, I, TextColour) then
+      Exit;
+  Result := False;
 End;
 
 Function GLH_IsChatBoxTextBetween(Text: String; StartLine, EndLine: Integer): Boolean;
@@ -137,27 +190,41 @@ Begin
   Result := False;
 End;
 
+Function GLH_IsChatBoxTextAnyLineEx(Text: String; TextColour: Integer): Boolean;
+Begin
+  Result := GLH_IsChatBoxTextBetweenEx(Text, TextColour, 1, 8);
+End;
+
 Function GLH_IsChatBoxTextAnyLine(Text: String): Boolean;
 Begin
   Result := GLH_IsChatBoxTextBetween(Text, 1, 8);
+End;
+
+Function GLH_ChatBoxTextArrayEx(TextColour: Integer): TStringArray;
+var
+  II: Integer;
+Begin
+  SetLength(Result, 9);
+  For II := 8 DownTo 1 Do
+    Result[II] := GLH_GetChatBoxTextEx(II, TextColour);
 End;
 
 Function GLH_ChatBoxTextArray: TStringArray;
 var
   Fonts: TFontArray;
 Begin
-  Fonts := GLHook_GetFontsByArea(IntToBox(MCX1, MCY1, MCX2, MCY2 - 13));
-  Result := GLHook_FontsToText(Fonts, False, 4, 10);
+  Fonts := GLHook_GetFontsByArea(IntToBox(GLC_MCBox.X1, GLC_MCBox.Y1, GLC_MCBox.X2, GLC_MCBox.Y2 - 13));
+  Result := GLHook_FontsToText(Fonts, False, 3, 14);
 End;
 
 Function GLH_GetBlackChatMessage: String;
 Begin
-  Result := GLH_GetChatBoxText(8);
+  Result := GLH_GetChatBoxTextEx(8, clMessage);
 End;
 
 Function GLH_FindBlackChatMessage(ChatMessage: String): Boolean;
 Begin
-  Result := (Pos(ChatMessage, GLH_GetChatBoxText(8)) > 0);
+  Result := (Pos(ChatMessage, GLH_GetChatBoxTextEx(8, clMessage)) > 0);
 End;
 
 Function GLH_LastChatter(var Name: String): Boolean;
@@ -168,19 +235,24 @@ Begin
   I := Pos(':', Name);
   If (I <> 0) Then
   Begin
-    Name := Copy(Name, 0, I - 1);
+    Delete(Name, I, I);
     Result := True;
   End;
 End;
 
 Function GLH_GetLastChatText(var Chat: String): Boolean;
-var
-  I, L: Integer;
 Begin
-  Chat := GLH_GetBlackChatMessage;
-  I := Pos(':', Chat) + 1; L := Length(Chat);
-  Chat := Copy(Chat, I, L - I);
-  Result := (L > 0);
+  Result := (GLH_GetChatBoxTextEx(8, clChat) <> '');
+End;
+
+Function GLH_InChat(Text: String): Boolean;
+var
+  S: string;
+Begin
+  If (Not (GLH_GetLastChatText(S))) then
+    GLH_LastChatter(S);
+
+  Result := (Pos(LowerCase(Text), Lowercase(S)) > 0);
 End;
 
 Function GLH_GetNPCChatName: String;
@@ -188,8 +260,8 @@ var
   Fonts: TFontArray;
   TextInfo: TTextInfoArray;
 Begin
-  Fonts := GLHook_GetFontsByArea(IntToBox(152, 345, 366, 370));
-  TextInfo := GLHook_FontsToTextEx(Fonts, False, 4, 10);
+  Fonts := GLHook_GetFontsByArea(GLC_MCBox);
+  TextInfo := GLHook_FontsToTextEx(Fonts, False, 4, 14);
   If ((Length(TextInfo) > 0) And (TextInfo[0].Colour = 7913190)) Then
     Result := TextInfo[0].Text;
 End;
@@ -197,4 +269,33 @@ End;
 Function GLH_IsNPCTalking: Boolean;
 Begin
   Result := (Length(GLH_GetNPCChatName) > 0);
+End;
+
+Function GLH_DoConversation(ResultText: String; ClickResult: Boolean): Boolean;
+var
+  T: Integer;
+Begin
+  While (T < 25) Do
+  Begin
+    If (Length(ResultText) <> 0) Then
+      If (GLH_FindNPCChatText(ResultText, Nothing)) Then
+      Begin
+        If ClickResult Then
+          GLH_ClickContinue(True, True);
+
+        Result := True;
+        Break;
+      End;
+
+    If (Not GLH_ClickContinue(True, True)) Then
+      Break;
+
+    Wait(100 + Random(200));
+    Inc(T);
+  End;
+End;
+
+Function GLH_PlayerChatActive: Boolean;
+Begin
+  Result := (Not GLH_FindChatBoxTextEx('Press Enter to Chat', 9, clBlack)) And GLH_LoggedIn;
 End;

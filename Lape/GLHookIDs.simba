@@ -9,6 +9,9 @@ const
   GLC_UpTextX2    = 310;
   GLC_UpTextY2    = 76;
 
+var
+  GLC_MSBox, GLC_MIBox, GLC_MCBox, GLC_MMBox: TBox;
+
 
 //Known Enumerations.
 
@@ -18,7 +21,7 @@ type
 
   GLE_MMLevel = (GLE_MMLevel_Health, GLE_MMLevel_Prayer, GLE_MMLevel_RunEnergy, GLE_MMLevel_Summoning);
 
-  GLE_Spell_Type = (GLE_Spell_MeleeTab, GLE_Spell_RangedTab, GLE_Spell_MagicTab, GLE_Spell_OtherTab);
+  GLE_Spell_Type = (GLE_Spell_None, GLE_Spell_MeleeTab, GLE_Spell_RangedTab, GLE_Spell_MagicTab, GLE_Spell_OtherTab);
 
   GLE_Spell_SubType = (GLE_Spell_None, GLE_Melee_Attack, GLE_Melee_Strength, GLE_Magic_Abilities, GLE_Magic_Combat, GLE_Magic_Transport,
                        GLE_Magic_Skills, GLE_Other_Defense, GLE_Other_Constitution);
@@ -76,6 +79,8 @@ const
   GLI_WorldList_Refresh             = 82365;
   GLIM_WorldList_Refresh            = 4085853;
 
+  GLI_NPC_Chat_Options              = 52107;
+  GLI_ContinueButton                = 152800;
   GLI_SquealGoblin                  = 312863;
   GLI_Squeal_ExitButton             = 11270;
   GLIM_Squeal_ExitButton            = 2362638;
@@ -325,10 +330,12 @@ const
   GLIM_Bank_SearchMode              = 1446930;
   GLIM_Bank_ShowEquipment           = 3682349;
 
+  GLI_ActionBarOpen                 = 166009;
   GLI_ActionBarSlot                 = 137700;
   GLI_ActionBarIndex                = 183514;
   GLI_ActionBarLock                 = 53087;
   GLI_ActionBarTrash                = 53087;
+  GLIM_ActionBarOpen                = 853764;
   GLIM_ActionBarSlot                = 1051144;
   GLIM_ActionBarIndex               = 1907481;
   //GLIM_ActionBarLocked              = ;

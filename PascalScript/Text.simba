@@ -15,8 +15,6 @@ Function GLH_ExtractFromString(Text: String; Extract: GLH_StringExtract): String
 var
   I: Integer;
 Begin
-  Result := '';
-
   For I := Length(Text) DownTo 1 Do
     If GLH_CharInRange(Text[I], Extract) Then
       Result := Text[I] + Result;
@@ -42,6 +40,11 @@ Function GLH_IsUpTextEx(Text: String): Boolean;
 Begin
   Text := Replace(Text, '?', '.');
   Result := ExecRegExpr('.*' + Text + '.*', GLH_GetUpText);
+End;
+
+Function GLH_IsUpTextRe(RegEx: String): Boolean;
+Begin
+  Result := ExecRegExpr(RegEx, GLH_GetUpText);
 End;
 
 Function GLH_IsUpText(Text: String): Boolean;
@@ -71,6 +74,60 @@ Begin
   Result := StrToIntDef(Between('l: ', ')', GLH_GetUpText), -1);
 End;
 
+Function GLH_FindNPCChatTextMulti(Texts: TStringArray; Action: fnct_ActionOptions): Boolean;
+var
+  TP: TPoint;
+  H, I, J, L: Integer;
+  Fonts: TFontArray;
+  Info: TTextInfoArray;
+  Options: TPanelArray;
+Begin
+  Fonts := GLHook_GetFontsByArea(IntToBox(72, 427, 447, 518));
+  Info := GLHook_FontsToTextEx(Fonts, False, 4, 10);
+  If (Length(Info) < 1) Then Exit;
+
+  Options := GLHook_GetItemsByID(GLI_NPC_Chat_Options);
+  If (Length(Options) < 1) Then Exit;
+
+  H := High(Options);
+  For I := 0 To H Do
+  Begin
+    Info[J].Area.X1 := Options[I].SX[0];
+    Info[J].Area.Y1 := Options[I].SY[0];
+    Inc(I);
+
+    Info[J].Area.X2 := Options[I].SX[2];
+    Info[J].Area.Y2 := Options[I].SY[2];
+    Inc(J);
+  End;
+
+  H := High(Info);
+  L := High(Texts);
+  TP := Point(-1, -1);
+
+  For I := 0 To L Do
+    For J := 0 To H Do
+      If (Pos(Texts[I], Info[J].Text) > 0) Then
+        TP := MiddleBox(Info[J].Area);
+
+  If (TP <> Point(-1, -1)) Then
+  Begin
+    GLHook_ShowNavBar;
+    Case Action Of
+      Move: MMouse(TP.X, TP.Y, 6, 3);
+      ClickLeft: Mouse(TP.X, TP.Y, 6, 3, MOUSE_LEFT);
+      ClickRight: Mouse(TP.X, TP.Y, 6, 3, MOUSE_RIGHT);
+    End;
+    GLHook_HideNavBar;
+    Result := True;
+  End;
+End;
+
+Function GLH_FindNPCChatText(Text: String; Action: fnct_ActionOptions): Boolean;
+Begin
+  Result := GLH_FindNPCChatTextMulti([Text], Action);
+End;
+
 Function GLH_GetChooseOptions(var MenuBounds: TBox): TTextInfoArray;
 var
   Fonts: TFontArray;
@@ -96,6 +153,7 @@ var
 Begin
   Result := False;
   TextInfo := GLH_GetChooseOptions(MenuBounds);
+
   If (Length(TextInfo) < 1) Then
     Exit;
 
@@ -116,10 +174,10 @@ Begin
                        If PointInBox(MP, Bounds) Then
                          ClickMouse2(True)
                        Else
-                         MouseBoxEx(Bounds.X1, Bounds.Y1, Bounds.X2, Bounds.Y1, 5, MOUSE_LEFT);
+                         MouseBoxEx(Bounds.X1, Bounds.Y1, Bounds.X2, Bounds.Y2, 5, MOUSE_LEFT);
 
           Move:        If (Not PointInBox(MP, Bounds)) Then
-                         MouseBoxEx(Bounds.X1, Bounds.Y1, Bounds.X2, Bounds.Y1, 5, MOUSE_MOVE);
+                         MouseBoxEx(Bounds.X1, Bounds.Y1, Bounds.X2, Bounds.Y2, 5, MOUSE_MOVE);
 
           Nothing:      Begin End;
 
@@ -163,4 +221,10 @@ Begin
     Result := GLH_ChooseOptionMultiEx(Options, Move)
   Else
     Result := GLH_ChooseOptionMultiEx(Options, Nothing);
+End;
+
+Function GLH_CloseWindow: Boolean;
+Begin
+  writeln('GLH_CloseWindow Not Implemented Yet.');
+  Result := False;
 End;
