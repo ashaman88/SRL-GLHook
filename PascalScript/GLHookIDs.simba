@@ -44,7 +44,7 @@ type
 
 //Client ID's.
 const
-  GLI_RSLogoID                      = 14565855;
+  GLI_RSLogoID                      = 1393566;
   GLI_LoginButton                   = 72450;
   GLI_LoginFaceBook                 = 571560;
   GLI_ValidEmailBox                 = 22731;
